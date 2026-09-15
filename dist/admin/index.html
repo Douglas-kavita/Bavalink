@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#102320" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Bavalink Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <div class="loading-screen" id="loading-screen"><span class="loader"></span><p>Opening Bavalink Admin…</p></div>
+
+    <main class="login-screen" id="login-screen" hidden>
+      <section class="login-card">
+        <a class="admin-brand" href="/" aria-label="Bavalink website"><span>B</span><strong>BAVALINK</strong></a>
+        <p class="eyebrow">Secure administration</p>
+        <h1>Manage your store.</h1>
+        <p>Sign in to update the website, products, prices, images and categories.</p>
+        <form id="login-form">
+          <label>Admin password<input id="password" type="password" autocomplete="current-password" required /></label>
+          <button type="submit">Open dashboard <span>→</span></button>
+          <p class="form-error" id="login-error" role="alert"></p>
+        </form>
+        <a class="back-link" href="/">← Back to Bavalink</a>
+      </section>
+    </main>
+
+    <div class="setup-screen" id="setup-screen" hidden>
+      <section class="setup-card">
+        <span class="setup-icon">!</span>
+        <p class="eyebrow">One-time setup required</p>
+        <h1>Connect the admin securely.</h1>
+        <p>Add the three protected environment variables shown below in Vercel, then redeploy. They remain private and are never included in the website.</p>
+        <ol><li><code>BAVALINK_ADMIN_PASSWORD</code></li><li><code>BAVALINK_SESSION_SECRET</code></li><li><code>GITHUB_TOKEN</code></li></ol>
+        <a href="/">Return to website</a>
+      </section>
+    </div>
+
+    <div class="admin-app" id="admin-app" hidden>
+      <aside class="sidebar">
+        <a class="admin-brand" href="/"><span>B</span><strong>BAVALINK</strong></a>
+        <nav aria-label="Admin sections">
+          <button class="nav-item active" type="button" data-view="overview"><span>⌂</span>Overview</button>
+          <button class="nav-item" type="button" data-view="site"><span>✦</span>Website</button>
+          <button class="nav-item" type="button" data-view="products"><span>▦</span>Products</button>
+          <button class="nav-item" type="button" data-view="categories"><span>◇</span>Categories</button>
+          <button class="nav-item" type="button" data-view="appearance"><span>◐</span>Appearance</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <a href="/" target="_blank" rel="noreferrer">View live website <span>↗</span></a>
+          <button id="logout-button" type="button">Sign out</button>
+        </div>
+      </aside>
+
+      <div class="workspace">
+        <header class="admin-header">
+          <button class="mobile-menu" id="mobile-menu" type="button" aria-label="Open navigation">☰</button>
+          <div><p id="view-kicker">Store control centre</p><h1 id="view-title">Overview</h1></div>
+          <div class="header-actions">
+            <span class="save-state" id="save-state">All changes saved</span>
+            <button class="secondary-button" id="export-button" type="button">Export backup</button>
+            <button class="save-button" id="save-button" type="button">Publish changes</button>
+          </div>
+        </header>
+
+        <main class="admin-content">
+          <section class="view active" data-view-panel="overview">
+            <div class="welcome-panel"><div><p class="eyebrow">Bavalink store</p><h2>Your website is ready to manage.</h2><p>Edit content and products here, then publish. Vercel will automatically update the public website from GitHub.</p></div><a href="/" target="_blank" rel="noreferrer">Open store ↗</a></div>
+            <div class="stats-grid">
+              <article><span>Products</span><strong id="product-count">0</strong><small>In the catalogue</small></article>
+              <article><span>Categories</span><strong id="category-count">0</strong><small>Shopping departments</small></article>
+              <article><span>Available</span><strong id="stock-count">0</strong><small>Products marked in stock</small></article>
+              <article><span>On sale</span><strong id="sale-count">0</strong><small>Products with sale pricing</small></article>
+            </div>
+            <div class="quick-grid">
+              <button type="button" data-jump="products"><span>＋</span><div><strong>Add a product</strong><small>Create a new catalogue item</small></div></button>
+              <button type="button" data-jump="site"><span>✎</span><div><strong>Edit homepage</strong><small>Change headings and contacts</small></div></button>
+              <button type="button" data-jump="appearance"><span>◐</span><div><strong>Change colours</strong><small>Update the Bavalink theme</small></div></button>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="site">
+            <div class="content-heading"><div><p class="eyebrow">Public website</p><h2>Website content</h2><p>Update the main wording and business details customers see.</p></div></div>
+            <div class="form-grid">
+              <article class="form-card"><h3>Business details</h3><div class="field-grid two"><label>Business name<input data-setting="brandName" /></label><label>Phone number<input data-setting="phoneDisplay" /></label><label>Location<input data-setting="location" /></label><label>Delivery message<input data-setting="deliveryText" /></label></div><label>Top announcement<input data-setting="announcement" /></label></article>
+              <article class="form-card"><h3>Homepage introduction</h3><label>Small heading<input data-setting="heroEyebrow" /></label><div class="field-grid two"><label>Main heading<input data-setting="heroTitle" /></label><label>Highlighted heading<input data-setting="heroAccent" /></label></div><label>Description<textarea data-setting="heroDescription" rows="3"></textarea></label></article>
+              <article class="form-card"><h3>Homepage images</h3><label>Main hero image URL<input type="url" data-setting="heroMainImage" /></label><label>Top feature image URL<input type="url" data-setting="heroTopImage" /></label><label>Bottom feature image URL<input type="url" data-setting="heroBottomImage" /></label><label>Why Bavalink image URL<input type="url" data-setting="whyImage" /></label></article>
+              <article class="form-card"><h3>Catalogue section</h3><label>Small heading<input data-setting="catalogueKicker" /></label><label>Main heading<input data-setting="catalogueTitle" /></label><label>Description<textarea data-setting="catalogueDescription" rows="3"></textarea></label></article>
+              <article class="form-card"><h3>Why Bavalink section</h3><label>Small heading<input data-setting="whyKicker" /></label><label>Main heading<input data-setting="whyTitle" /></label><label>Description<textarea data-setting="whyDescription" rows="4"></textarea></label></article>
+              <article class="form-card"><h3>Contact section</h3><label>Small heading<input data-setting="contactKicker" /></label><label>Main heading<input data-setting="contactTitle" /></label><label>Description<textarea data-setting="contactDescription" rows="3"></textarea></label></article>
+              <article class="form-card"><h3>Footer</h3><label>Business description<textarea data-setting="footerDescription" rows="4"></textarea></label><label>Footer tagline<input data-setting="footerTagline" /></label></article>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="products">
+            <div class="content-heading product-heading"><div><p class="eyebrow">Catalogue manager</p><h2>Products</h2><p>Edit product details, pricing, images and stock.</p></div><button class="save-button" id="add-product-button" type="button">+ Add product</button></div>
+            <div class="table-toolbar"><label class="admin-search">⌕<input id="product-search" type="search" placeholder="Search products…" /></label><select id="product-category-filter"><option value="All">All categories</option></select></div>
+            <div class="data-table product-table"><div class="table-head"><span>Product</span><span>Category</span><span>Price</span><span>Status</span><span></span></div><div id="product-rows"></div></div>
+          </section>
+
+          <section class="view" data-view-panel="categories">
+            <div class="content-heading product-heading"><div><p class="eyebrow">Store navigation</p><h2>Categories</h2><p>Rename departments, change their images or add new ones.</p></div><button class="save-button" id="add-category-button" type="button">+ Add category</button></div>
+            <div class="data-table category-table"><div class="table-head"><span>Category</span><span>Products</span><span>Image URL</span><span></span></div><div id="category-rows"></div></div>
+          </section>
+
+          <section class="view" data-view-panel="appearance">
+            <div class="content-heading"><div><p class="eyebrow">Brand presentation</p><h2>Appearance</h2><p>Control Bavalink’s colours and visible homepage sections.</p></div></div>
+            <div class="appearance-grid">
+              <article class="form-card"><h3>Brand colours</h3><div class="colour-grid"><label><span><i style="background:#102320"></i>Dark colour</span><input type="color" data-color="ink" /></label><label><span><i style="background:#f5f2e9"></i>Background</span><input type="color" data-color="paper" /></label><label><span><i style="background:#d9ef58"></i>Highlight</span><input type="color" data-color="lime" /></label><label><span><i style="background:#ff6935"></i>Accent</span><input type="color" data-color="orange" /></label></div></article>
+              <article class="form-card"><h3>Homepage sections</h3><div class="toggle-list"><label><span><strong>Categories</strong><small>Shopping department cards</small></span><input type="checkbox" data-visibility="categories" /></label><label><span><strong>Catalogue</strong><small>Product search and listings</small></span><input type="checkbox" data-visibility="catalogue" /></label><label><span><strong>Why Bavalink</strong><small>Customer support information</small></span><input type="checkbox" data-visibility="why" /></label><label><span><strong>Contact</strong><small>Call and WhatsApp section</small></span><input type="checkbox" data-visibility="contact" /></label></div></article>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <dialog id="product-dialog" class="editor-dialog">
+      <form id="product-form" method="dialog">
+        <header><div><p class="eyebrow">Catalogue item</p><h2 id="product-dialog-title">Edit product</h2></div><button class="dialog-close" type="button" aria-label="Close">×</button></header>
+        <div class="dialog-fields">
+          <label class="full">Product name<input name="name" required /></label>
+          <label>Category<select name="category" required></select></label>
+          <label>SKU<input name="sku" /></label>
+          <label>Current price (KSh)<input name="price" type="number" min="0" step="1" required /></label>
+          <label>Old price (KSh)<input name="regularPrice" type="number" min="0" step="1" /></label>
+          <label class="full">Image URL<input name="image" type="url" /></label>
+          <label class="full">Description<textarea name="description" rows="6"></textarea></label>
+          <label class="check-field"><input name="inStock" type="checkbox" /> In stock</label>
+          <label class="check-field"><input name="onSale" type="checkbox" /> Show sale price</label>
+        </div>
+        <footer><button class="danger-button" id="delete-product-button" type="button">Delete product</button><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="save-button" type="submit">Save product</button></div></footer>
+      </form>
+    </dialog>
+
+    <div class="toast" id="admin-toast" role="status" aria-live="polite"></div>
+    <script src="../site-config.js"></script>
+    <script src="../catalog-data.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>
