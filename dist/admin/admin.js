@@ -1,0 +1,259 @@
+(() => {
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+  let site = clone(window.BAVALINK_SITE || {});
+  let catalog = clone(window.BAVALINK_CATALOG || { categories: [], products: [] });
+  let activeProductId = null;
+  let dirty = false;
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const els = {
+    loading: $("#loading-screen"), login: $("#login-screen"), setup: $("#setup-screen"), app: $("#admin-app"),
+    loginForm: $("#login-form"), loginError: $("#login-error"), save: $("#save-button"), saveState: $("#save-state"),
+    viewTitle: $("#view-title"), viewKicker: $("#view-kicker"), productRows: $("#product-rows"), categoryRows: $("#category-rows"),
+    productSearch: $("#product-search"), categoryFilter: $("#product-category-filter"), dialog: $("#product-dialog"),
+    productForm: $("#product-form"), dialogTitle: $("#product-dialog-title"), deleteProduct: $("#delete-product-button"),
+    toast: $("#admin-toast"), sidebar: $(".sidebar")
+  };
+
+  async function request(action, body = {}) {
+    const response = await fetch("/api/admin", {
+      method: action === "status" ? "GET" : "POST",
+      headers: { "content-type": "application/json" },
+      body: action === "status" ? undefined : JSON.stringify({ action, ...body })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(data.error || "The request could not be completed."), { status: response.status, data });
+    return data;
+  }
+
+  function showOnly(element) {
+    [els.loading, els.login, els.setup, els.app].forEach((item) => item.hidden = item !== element);
+  }
+
+  async function start() {
+    try {
+      const status = await request("status");
+      if (status.setupRequired) return showOnly(els.setup);
+      if (!status.authenticated) return showOnly(els.login);
+      openDashboard();
+    } catch (error) {
+      if (error.status === 503) showOnly(els.setup);
+      else { showOnly(els.login); els.loginError.textContent = "The admin service is unavailable. Check the deployment and try again."; }
+    }
+  }
+
+  function openDashboard() {
+    showOnly(els.app);
+    fillSiteFields();
+    renderEverything();
+  }
+
+  function markDirty() {
+    dirty = true;
+    els.saveState.textContent = "Unpublished changes";
+    els.saveState.classList.add("dirty");
+  }
+
+  function markSaved() {
+    dirty = false;
+    els.saveState.textContent = "All changes saved";
+    els.saveState.classList.remove("dirty");
+  }
+
+  function toast(message) {
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => els.toast.classList.remove("show"), 2600);
+  }
+
+  function switchView(name) {
+    const titles = { overview: ["Store control centre", "Overview"], site: ["Public website", "Website content"], products: ["Catalogue manager", "Products"], categories: ["Store navigation", "Categories"], appearance: ["Brand presentation", "Appearance"] };
+    $$(".nav-item").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+    $$("[data-view-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.viewPanel === name));
+    els.viewKicker.textContent = titles[name][0];
+    els.viewTitle.textContent = titles[name][1];
+    els.sidebar.classList.remove("open");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function fillSiteFields() {
+    $$('[data-setting]').forEach((input) => input.value = site[input.dataset.setting] || "");
+    $$('[data-color]').forEach((input) => input.value = site.colors?.[input.dataset.color] || "#000000");
+    $$('[data-visibility]').forEach((input) => input.checked = site.visibility?.[input.dataset.visibility] !== false);
+  }
+
+  function money(product, value = product.price) {
+    return `KSh ${new Intl.NumberFormat("en-KE").format(Number(value || 0) / (10 ** (product.minorUnit ?? 2)))}`;
+  }
+
+  function escapeHTML(value = "") {
+    return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
+  }
+
+  function renderEverything() {
+    refreshCounts();
+    renderStats();
+    renderProductFilters();
+    renderProducts();
+    renderCategories();
+  }
+
+  function refreshCounts() {
+    catalog.categories.forEach((category) => {
+      category.count = catalog.products.filter((product) => product.categories?.includes(category.name)).length;
+    });
+  }
+
+  function renderStats() {
+    $("#product-count").textContent = catalog.products.length;
+    $("#category-count").textContent = catalog.categories.length;
+    $("#stock-count").textContent = catalog.products.filter((product) => product.inStock).length;
+    $("#sale-count").textContent = catalog.products.filter((product) => product.onSale).length;
+  }
+
+  function renderProductFilters() {
+    const selected = els.categoryFilter.value || "All";
+    els.categoryFilter.innerHTML = `<option value="All">All categories</option>${catalog.categories.map((category) => `<option value="${escapeHTML(category.name)}">${escapeHTML(category.name)}</option>`).join("")}`;
+    if ([...els.categoryFilter.options].some((option) => option.value === selected)) els.categoryFilter.value = selected;
+  }
+
+  function renderProducts() {
+    const query = els.productSearch.value.trim().toLowerCase();
+    const category = els.categoryFilter.value;
+    const rows = catalog.products.filter((product) => {
+      const matchesText = !query || `${product.name} ${product.sku || ""} ${(product.categories || []).join(" ")}`.toLowerCase().includes(query);
+      return matchesText && (category === "All" || product.categories?.includes(category));
+    });
+    els.productRows.innerHTML = rows.length ? rows.map((product) => `
+      <div class="table-row" data-product-id="${product.id}">
+        <div class="product-cell">${product.image ? `<img src="${escapeHTML(product.image)}" alt="" loading="lazy" />` : `<span class="product-placeholder">B</span>`}<div><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.sku || `ID ${product.id}`)}</small></div></div>
+        <span>${escapeHTML(product.categories?.[0] || "Uncategorised")}</span>
+        <span class="price-cell">${money(product)}</span>
+        <span class="status-pill ${product.inStock ? "" : "out"}">${product.inStock ? "In stock" : "Check stock"}</span>
+        <button class="row-action" type="button" data-edit-product="${product.id}" aria-label="Edit ${escapeHTML(product.name)}">•••</button>
+      </div>`).join("") : `<div class="empty-table">No products match this search.</div>`;
+  }
+
+  function renderCategories() {
+    refreshCounts();
+    els.categoryRows.innerHTML = catalog.categories.length ? catalog.categories.map((category) => `
+      <div class="table-row" data-category-id="${category.id}">
+        <input value="${escapeHTML(category.name)}" data-category-field="name" aria-label="Category name" />
+        <span>${category.count}</span>
+        <input value="${escapeHTML(category.image || "")}" data-category-field="image" aria-label="Category image URL" />
+        <button class="row-action" type="button" data-delete-category="${category.id}" aria-label="Delete ${escapeHTML(category.name)}">×</button>
+      </div>`).join("") : `<div class="empty-table">No categories have been added.</div>`;
+  }
+
+  function openProductEditor(id = null) {
+    activeProductId = id == null ? null : Number(id);
+    const product = activeProductId == null ? {
+      id: Date.now(), name: "", sku: "", description: "", shortDescription: "", categories: [catalog.categories[0]?.name || "Equipment"], image: "", gallery: [], price: 0, regularPrice: 0, salePrice: 0, currency: "KES", minorUnit: 2, onSale: false, inStock: true, rating: 0, reviewCount: 0
+    } : catalog.products.find((item) => Number(item.id) === activeProductId);
+    if (!product) return;
+    els.dialogTitle.textContent = activeProductId == null ? "Add product" : "Edit product";
+    els.deleteProduct.hidden = activeProductId == null;
+    const form = els.productForm.elements;
+    form.name.value = product.name || "";
+    form.sku.value = product.sku || "";
+    form.price.value = Number(product.price || 0) / (10 ** (product.minorUnit ?? 2));
+    form.regularPrice.value = Number(product.regularPrice || product.price || 0) / (10 ** (product.minorUnit ?? 2));
+    form.image.value = product.image || "";
+    form.description.value = product.description || "";
+    form.inStock.checked = product.inStock !== false;
+    form.onSale.checked = Boolean(product.onSale);
+    form.category.innerHTML = catalog.categories.map((category) => `<option value="${escapeHTML(category.name)}">${escapeHTML(category.name)}</option>`).join("");
+    form.category.value = product.categories?.[0] || catalog.categories[0]?.name || "";
+    els.dialog.dataset.draft = JSON.stringify(product);
+    els.dialog.showModal();
+  }
+
+  function saveProduct() {
+    const form = els.productForm.elements;
+    const draft = JSON.parse(els.dialog.dataset.draft);
+    const minorUnit = Number(draft.minorUnit ?? 2);
+    const updated = {
+      ...draft,
+      name: form.name.value.trim(), sku: form.sku.value.trim(), description: form.description.value.trim(), shortDescription: form.description.value.trim(),
+      categories: [form.category.value], image: form.image.value.trim(), gallery: form.image.value.trim() ? [form.image.value.trim()] : [],
+      price: Math.round(Number(form.price.value || 0) * (10 ** minorUnit)), regularPrice: Math.round(Number(form.regularPrice.value || form.price.value || 0) * (10 ** minorUnit)),
+      salePrice: form.onSale.checked ? Math.round(Number(form.price.value || 0) * (10 ** minorUnit)) : 0, inStock: form.inStock.checked, onSale: form.onSale.checked
+    };
+    if (!updated.name) return;
+    if (activeProductId == null) catalog.products.unshift(updated);
+    else catalog.products[catalog.products.findIndex((item) => Number(item.id) === activeProductId)] = updated;
+    els.dialog.close();
+    markDirty();
+    renderEverything();
+    toast(activeProductId == null ? "Product added" : "Product updated");
+  }
+
+  async function publishChanges() {
+    site.phoneDigits = String(site.phoneDisplay || "").replace(/\D/g, "");
+    if (site.phoneDigits.startsWith("0")) site.phoneDigits = `254${site.phoneDigits.slice(1)}`;
+    refreshCounts();
+    catalog.generatedAt = new Date().toISOString();
+    els.save.disabled = true;
+    els.save.textContent = "Publishing…";
+    try {
+      const result = await request("save", { site, catalog });
+      markSaved();
+      toast(result.message || "Changes published successfully");
+    } catch (error) {
+      toast(error.message);
+      els.saveState.textContent = "Publish failed";
+      els.saveState.classList.add("dirty");
+    } finally {
+      els.save.disabled = false;
+      els.save.textContent = "Publish changes";
+    }
+  }
+
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify({ site, catalog }, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `bavalink-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  els.loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    els.loginError.textContent = "";
+    const button = $("button[type='submit']", els.loginForm);
+    button.disabled = true;
+    try { await request("login", { password: $("#password").value }); $("#password").value = ""; openDashboard(); }
+    catch (error) { els.loginError.textContent = error.message; }
+    finally { button.disabled = false; }
+  });
+  $$(".nav-item").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
+  $$('[data-jump]').forEach((button) => button.addEventListener("click", () => { switchView(button.dataset.jump); if (button.dataset.jump === "products") openProductEditor(); }));
+  $$('[data-setting]').forEach((input) => input.addEventListener("input", () => { site[input.dataset.setting] = input.value; markDirty(); }));
+  $$('[data-color]').forEach((input) => input.addEventListener("input", () => { site.colors ||= {}; site.colors[input.dataset.color] = input.value; input.previousElementSibling.querySelector("i").style.background = input.value; markDirty(); }));
+  $$('[data-visibility]').forEach((input) => input.addEventListener("change", () => { site.visibility ||= {}; site.visibility[input.dataset.visibility] = input.checked; markDirty(); }));
+  els.productSearch.addEventListener("input", renderProducts);
+  els.categoryFilter.addEventListener("change", renderProducts);
+  $("#add-product-button").addEventListener("click", () => openProductEditor());
+  els.productRows.addEventListener("click", (event) => { const button = event.target.closest("[data-edit-product]"); if (button) openProductEditor(button.dataset.editProduct); });
+  $$(".dialog-close").forEach((button) => button.addEventListener("click", () => els.dialog.close()));
+  els.productForm.addEventListener("submit", (event) => { event.preventDefault(); saveProduct(); });
+  els.deleteProduct.addEventListener("click", () => { if (activeProductId == null || !confirm("Delete this product permanently?")) return; catalog.products = catalog.products.filter((item) => Number(item.id) !== activeProductId); els.dialog.close(); markDirty(); renderEverything(); toast("Product deleted"); });
+  $("#add-category-button").addEventListener("click", () => { const name = prompt("New category name"); if (!name?.trim()) return; catalog.categories.push({ id: Date.now(), name: name.trim(), slug: name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""), count: 0, image: "" }); markDirty(); renderEverything(); });
+  els.categoryRows.addEventListener("change", (event) => {
+    const input = event.target.closest("[data-category-field]"); if (!input) return;
+    const row = input.closest("[data-category-id]"); const category = catalog.categories.find((item) => String(item.id) === row.dataset.categoryId); if (!category) return;
+    if (input.dataset.categoryField === "name") { const previous = category.name; category.name = input.value.trim() || previous; catalog.products.forEach((product) => { product.categories = (product.categories || []).map((name) => name === previous ? category.name : name); }); }
+    else category.image = input.value.trim();
+    markDirty(); renderEverything();
+  });
+  els.categoryRows.addEventListener("click", (event) => { const button = event.target.closest("[data-delete-category]"); if (!button) return; const category = catalog.categories.find((item) => String(item.id) === button.dataset.deleteCategory); if (!category || !confirm(`Delete the ${category.name} category? Products will remain in the catalogue.`)) return; catalog.categories = catalog.categories.filter((item) => item !== category); markDirty(); renderEverything(); });
+  els.save.addEventListener("click", publishChanges);
+  $("#export-button").addEventListener("click", exportBackup);
+  $("#logout-button").addEventListener("click", async () => { await request("logout").catch(() => {}); location.reload(); });
+  $("#mobile-menu").addEventListener("click", () => els.sidebar.classList.toggle("open"));
+  window.addEventListener("beforeunload", (event) => { if (!dirty) return; event.preventDefault(); event.returnValue = ""; });
+  start();
+})();
