@@ -1,0 +1,9 @@
+{
+  "name": "bavalink-store",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "refresh-catalog": "node scripts/fetch-catalog.mjs",
+    "build": "node scripts/fetch-catalog.mjs"
+  }
+}
