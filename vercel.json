@@ -2,8 +2,16 @@
   "version": 2,
   "buildCommand": null,
   "outputDirectory": "dist",
+  "functions": {
+    "api/admin.js": {
+      "maxDuration": 15
+    }
+  },
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
