@@ -1,0 +1,39 @@
+window.BAVALINK_SITE = {
+  brandName: "Bavalink",
+  phoneDisplay: "+254 724 809656",
+  phoneDigits: "254724809656",
+  location: "Nairobi, Kenya",
+  announcement: "Countrywide delivery across Kenya",
+  heroEyebrow: "Equipment that earns its keep",
+  heroTitle: "Serious tools.",
+  heroAccent: "Ready for work.",
+  heroDescription: "Power tools, workshop equipment, water solutions and machinery selected for Kenyan homes, farms and businesses.",
+  heroMainImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/ingco-hkthp21421-142-pcs-combination-tools-set.jpg",
+  heroTopImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/1500watts.jpg",
+  heroBottomImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/Royce-welding-machine.jpg",
+  whyImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/271b42b2-5231-4f6b-b7e9-c9c40f992d36.jpg",
+  catalogueKicker: "The Bavalink catalogue",
+  catalogueTitle: "Tools for every task",
+  catalogueDescription: "Search the full range, compare prices and send your order directly to our team.",
+  whyKicker: "A better way to source equipment",
+  whyTitle: "Know what you’re buying. Get help when you need it.",
+  whyDescription: "From choosing the right wattage to checking stock and arranging delivery, our team is one call away. Send the product to us on WhatsApp and we’ll help you confirm the best fit.",
+  contactKicker: "Need help before ordering?",
+  contactTitle: "Let’s find the right tool.",
+  contactDescription: "Share what you need to do, your preferred budget and delivery location. We’ll guide you through the available options.",
+  footerDescription: "Tools, machinery and dependable equipment for homes, farms, workshops and businesses across Kenya.",
+  footerTagline: "Quality equipment. Straightforward service.",
+  deliveryText: "Delivery available countrywide",
+  colors: {
+    ink: "#102320",
+    paper: "#f5f2e9",
+    lime: "#d9ef58",
+    orange: "#ff6935"
+  },
+  visibility: {
+    categories: true,
+    catalogue: true,
+    why: true,
+    contact: true
+  }
+};
