@@ -1,5 +1,6 @@
 (() => {
-  const PHONE = "254724809656";
+  const site = window.BAVALINK_SITE || {};
+  const PHONE = String(site.phoneDigits || "254724809656").replace(/\D/g, "");
   const catalog = window.BAVALINK_CATALOG || { products: [], categories: [] };
   const products = catalog.products || [];
   const categories = catalog.categories || [];
@@ -38,6 +39,49 @@
     menuButton: document.querySelector(".menu-button"),
     mobileNav: document.querySelector(".mobile-nav"),
   };
+
+  function applySiteConfiguration() {
+    const root = document.documentElement;
+    if (site.colors) {
+      if (site.colors.ink) root.style.setProperty("--ink", site.colors.ink);
+      if (site.colors.paper) root.style.setProperty("--paper", site.colors.paper);
+      if (site.colors.lime) root.style.setProperty("--lime", site.colors.lime);
+      if (site.colors.orange) root.style.setProperty("--orange", site.colors.orange);
+    }
+
+    document.querySelectorAll("[data-site]").forEach((element) => {
+      const value = site[element.dataset.site];
+      if (typeof value === "string") element.textContent = value;
+    });
+
+    document.querySelectorAll("[data-site-image]").forEach((image) => {
+      const value = site[image.dataset.siteImage];
+      if (typeof value === "string" && /^https?:\/\//i.test(value)) image.src = value;
+    });
+
+    const brand = site.brandName || "Bavalink";
+    document.title = `${brand} | Tools, Machinery & Equipment in Kenya`;
+    document.querySelectorAll(".brand-name").forEach((element) => {
+      const split = Math.max(1, Math.ceil(brand.length / 2));
+      element.innerHTML = `${escapeHTML(brand.slice(0, split).toUpperCase())}<span>${escapeHTML(brand.slice(split).toUpperCase())}</span>`;
+    });
+
+    const phoneDisplay = site.phoneDisplay || "+254 724 809656";
+    document.querySelectorAll('a[href^="tel:"]').forEach((link) => link.href = `tel:+${PHONE}`);
+    document.querySelectorAll('a[href*="wa.me/"]').forEach((link) => {
+      const url = new URL(link.href);
+      url.pathname = `/${PHONE}`;
+      link.href = url.toString();
+    });
+    document.querySelectorAll('[data-site="phoneDisplay"]').forEach((element) => element.textContent = phoneDisplay);
+
+    const visibility = site.visibility || {};
+    const sections = { categories: "#categories", catalogue: "#catalogue", why: "#why-us", contact: "#contact" };
+    Object.entries(sections).forEach(([key, selector]) => {
+      const section = document.querySelector(selector);
+      if (section && visibility[key] === false) section.hidden = true;
+    });
+  }
 
   function escapeHTML(value = "") {
     return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
@@ -266,6 +310,7 @@
   els.mobileNav.addEventListener("click", () => { els.menuButton.setAttribute("aria-expanded", "false"); els.mobileNav.classList.remove("open"); });
   document.querySelectorAll("[data-footer-filter]").forEach((link) => link.addEventListener("click", () => selectCategory(link.dataset.footerFilter)));
   document.querySelector("#year").textContent = new Date().getFullYear();
+  applySiteConfiguration();
 
   if (!products.length) {
     els.grid.innerHTML = `<div class="no-results"><strong>Catalogue unavailable</strong><p>Call or WhatsApp +254 724 809656 and we’ll help you find the equipment you need.</p></div>`;
