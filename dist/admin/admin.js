@@ -1,7 +1,7 @@
 (() => {
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  let site = clone(window.BAVALINK_SITE || {});
-  let catalog = clone(window.BAVALINK_CATALOG || { categories: [], products: [] });
+  let site = clone(window.BEVALINK_SITE || {});
+  let catalog = clone(window.BEVALINK_CATALOG || { categories: [], products: [] });
   let activeProductId = null;
   let dirty = false;
 
@@ -215,7 +215,7 @@
     const blob = new Blob([JSON.stringify({ site, catalog }, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `bavalink-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `bevalink-backup-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
   }
