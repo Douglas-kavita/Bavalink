@@ -27,6 +27,130 @@
     return data;
   }
 
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const url = URL.createObjectURL(file);
+      image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+      image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("This image could not be opened.")); };
+      image.src = url;
+    });
+  }
+
+  function canvasToBlob(canvas, quality) {
+    return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("This image could not be prepared.")), "image/webp", quality));
+  }
+
+  async function prepareImage(file) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) throw new Error("Choose a JPG, PNG or WebP image.");
+    if (file.size > 20_000_000) throw new Error("Choose an image smaller than 20 MB.");
+    const image = await loadImage(file);
+    const maximum = 1600;
+    const scale = Math.min(1, maximum / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    let blob = await canvasToBlob(canvas, 0.82);
+    if (blob.size > 1_900_000) blob = await canvasToBlob(canvas, 0.64);
+    if (blob.size > 2_500_000) throw new Error("The image is still too large. Choose a smaller photo.");
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "bevalink-image";
+    return { blob, fileName: baseName + ".webp", mimeType: "image/webp" };
+  }
+
+  function readAsBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1]);
+      reader.onerror = () => reject(new Error("The image could not be read."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function uploadImage(file) {
+    const prepared = await prepareImage(file);
+    const data = await readAsBase64(prepared.blob);
+    return request("upload", { fileName: prepared.fileName, mimeType: prepared.mimeType, data });
+  }
+
+  function enhanceImageInputs(root = document) {
+    const selector = [
+      'input[data-setting="heroMainImage"]',
+      'input[data-setting="heroTopImage"]',
+      'input[data-setting="heroBottomImage"]',
+      'input[data-setting="whyImage"]',
+      'input[name="image"]',
+      'input[data-category-field="image"]'
+    ].join(",");
+
+    $(selector, root).forEach((input) => {
+      if (input.dataset.uploadReady) return;
+      input.dataset.uploadReady = "true";
+      const field = document.createElement("div");
+      field.className = "image-upload-field";
+      input.parentNode.insertBefore(field, input);
+      field.appendChild(input);
+      const toolRow = document.createElement("div");
+      toolRow.className = "image-upload-tools";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "device-upload-button";
+      button.textContent = "Upload from phone / PC";
+      const picker = document.createElement("input");
+      picker.type = "file";
+      picker.accept = "image/jpeg,image/png,image/webp";
+      picker.className = "device-file-input";
+      const status = document.createElement("span");
+      status.className = "image-upload-status";
+      status.textContent = "or paste an image link above";
+      toolRow.append(button, picker, status);
+      const preview = document.createElement("img");
+      preview.className = "image-upload-preview";
+      preview.alt = "Selected image preview";
+      const updatePreview = () => {
+        const value = input.value.trim();
+        preview.hidden = !value;
+        if (value) preview.src = value;
+      };
+      input.addEventListener("input", updatePreview);
+      preview.addEventListener("error", () => preview.hidden = true);
+      field.append(toolRow, preview);
+      updatePreview();
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        picker.click();
+      });
+      picker.addEventListener("click", (event) => event.stopPropagation());
+      picker.addEventListener("change", async () => {
+        const file = picker.files?.[0];
+        if (!file) return;
+        button.disabled = true;
+        button.textContent = "Uploading…";
+        status.textContent = "Preparing photo…";
+        try {
+          const result = await uploadImage(file);
+          input.value = result.url;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+          status.textContent = "Uploaded — publish changes";
+          toast("Photo uploaded. Click Publish changes when ready.");
+        } catch (error) {
+          status.textContent = error.message;
+          toast(error.message);
+        } finally {
+          button.disabled = false;
+          button.textContent = "Upload from phone / PC";
+          picker.value = "";
+        }
+      });
+    });
+  }
+
   function showOnly(element) {
     [els.loading, els.login, els.setup, els.app].forEach((item) => item.hidden = item !== element);
   }
@@ -47,6 +171,7 @@
     showOnly(els.app);
     fillSiteFields();
     renderEverything();
+    enhanceImageInputs();
   }
 
   function markDirty() {
@@ -142,10 +267,11 @@
       <div class="table-row" data-category-id="${category.id}">
         <input value="${escapeHTML(category.name)}" data-category-field="name" aria-label="Category name" />
         <span>${category.count}</span>
-        <input value="${escapeHTML(category.image || "")}" data-category-field="image" aria-label="Category image URL" />
+        <input type="url" value="${escapeHTML(category.image || "")}" data-category-field="image" aria-label="Category image URL" />
         <button class="row-action" type="button" data-delete-category="${category.id}" aria-label="Delete ${escapeHTML(category.name)}">×</button>
       </div>`).join("") : `<div class="empty-table">No categories have been added.</div>`;
   }
+    enhanceImageInputs(els.categoryRows);
 
   function openProductEditor(id = null) {
     activeProductId = id == null ? null : Number(id);

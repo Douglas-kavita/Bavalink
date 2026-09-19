@@ -101,6 +101,42 @@ async function publishToGitHub(site, catalog, token, repository) {
   return commit.sha;
 }
 
+
+const IMAGE_TYPES = {
+  "image/jpeg": { extension: "jpg", signature: (buffer) => buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff },
+  "image/png": { extension: "png", signature: (buffer) => buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
+  "image/webp": { extension: "webp", signature: (buffer) => buffer.subarray(0, 4).toString() === "RIFF" && buffer.subarray(8, 12).toString() === "WEBP" }
+};
+
+function validateImagePayload(fileName, mimeType, data) {
+  const type = IMAGE_TYPES[mimeType];
+  if (!type) throw new Error("Use a JPG, PNG or WebP image.");
+  if (typeof data !== "string" || !data.length || data.length > 3_500_000) throw new Error("The selected image is too large.");
+  const buffer = Buffer.from(data.replace(/^data:[^;]+;base64,/, ""), "base64");
+  if (!buffer.length || buffer.length > 2_500_000) throw new Error("The selected image is too large after compression.");
+  if (!type.signature(buffer)) throw new Error("The selected file is not a valid image.");
+  const cleanName = String(fileName || "image").replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48) || "image";
+  return { buffer, extension: type.extension, cleanName };
+}
+
+async function uploadImageToGitHub(fileName, mimeType, data, token, repository) {
+  const image = validateImagePayload(fileName, mimeType, data);
+  const branch = process.env.GITHUB_BRANCH || "main";
+  const encodedRepo = repository.split("/").map(encodeURIComponent).join("/");
+  const storedName = Date.now() + "-" + crypto.randomBytes(5).toString("hex") + "-" + image.cleanName + "." + image.extension;
+  const filePath = "dist/uploads/" + storedName;
+  const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
+  await githubRequest("/repos/" + encodedRepo + "/contents/" + encodedPath, token, {
+    method: "PUT",
+    body: JSON.stringify({
+      message: "Upload Bevalink image from admin",
+      content: image.buffer.toString("base64"),
+      branch
+    })
+  });
+  return "/uploads/" + storedName;
+}
+
 module.exports = async function handler(req, res) {
   const adminPassword = process.env.BEVALINK_ADMIN_PASSWORD;
   const sessionSecret = process.env.BEVALINK_SESSION_SECRET;
@@ -128,6 +164,16 @@ module.exports = async function handler(req, res) {
   if (body.action === "logout") {
     res.setHeader("set-cookie", `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`);
     return json(res, 200, { authenticated: false });
+  }
+
+
+  if (!setupRequired && authenticated(req, sessionSecret) && body.action === "upload") {
+    try {
+      const url = await uploadImageToGitHub(body.fileName, body.mimeType, body.data, githubToken, repository);
+      return json(res, 200, { message: "Image uploaded. Publish your changes when ready.", url });
+    } catch (error) {
+      return json(res, 400, { error: error.message || "The image could not be uploaded." });
+    }
   }
 
   if (!setupRequired && authenticated(req, sessionSecret) && body.action === "save") {

@@ -88,7 +88,7 @@
             <div class="form-grid">
               <article class="form-card"><h3>Business details</h3><div class="field-grid two"><label>Business name<input data-setting="brandName" /></label><label>Phone number<input data-setting="phoneDisplay" /></label><label>Location<input data-setting="location" /></label><label>Delivery message<input data-setting="deliveryText" /></label></div><label>Top announcement<input data-setting="announcement" /></label></article>
               <article class="form-card"><h3>Homepage introduction</h3><label>Small heading<input data-setting="heroEyebrow" /></label><div class="field-grid two"><label>Main heading<input data-setting="heroTitle" /></label><label>Highlighted heading<input data-setting="heroAccent" /></label></div><label>Description<textarea data-setting="heroDescription" rows="3"></textarea></label></article>
-              <article class="form-card"><h3>Homepage images</h3><label>Main hero image URL<input type="url" data-setting="heroMainImage" /></label><label>Top feature image URL<input type="url" data-setting="heroTopImage" /></label><label>Bottom feature image URL<input type="url" data-setting="heroBottomImage" /></label><label>Why Bevalink image URL<input type="url" data-setting="whyImage" /></label></article>
+              <article class="form-card"><h3>Homepage images</h3><label>Main hero image<input type="url" data-setting="heroMainImage" /></label><label>Top feature image<input type="url" data-setting="heroTopImage" /></label><label>Bottom feature image<input type="url" data-setting="heroBottomImage" /></label><label>Why Bevalink image<input type="url" data-setting="whyImage" /></label></article>
               <article class="form-card"><h3>Catalogue section</h3><label>Small heading<input data-setting="catalogueKicker" /></label><label>Main heading<input data-setting="catalogueTitle" /></label><label>Description<textarea data-setting="catalogueDescription" rows="3"></textarea></label></article>
               <article class="form-card"><h3>Why Bevalink section</h3><label>Small heading<input data-setting="whyKicker" /></label><label>Main heading<input data-setting="whyTitle" /></label><label>Description<textarea data-setting="whyDescription" rows="4"></textarea></label></article>
               <article class="form-card"><h3>Contact section</h3><label>Small heading<input data-setting="contactKicker" /></label><label>Main heading<input data-setting="contactTitle" /></label><label>Description<textarea data-setting="contactDescription" rows="3"></textarea></label></article>
@@ -104,7 +104,7 @@
 
           <section class="view" data-view-panel="categories">
             <div class="content-heading product-heading"><div><p class="eyebrow">Store navigation</p><h2>Categories</h2><p>Rename departments, change their images or add new ones.</p></div><button class="save-button" id="add-category-button" type="button">+ Add category</button></div>
-            <div class="data-table category-table"><div class="table-head"><span>Category</span><span>Products</span><span>Image URL</span><span></span></div><div id="category-rows"></div></div>
+            <div class="data-table category-table"><div class="table-head"><span>Category</span><span>Products</span><span>Image</span><span></span></div><div id="category-rows"></div></div>
           </section>
 
           <section class="view" data-view-panel="appearance">
@@ -127,7 +127,7 @@
           <label>SKU<input name="sku" /></label>
           <label>Current price (KSh)<input name="price" type="number" min="0" step="1" required /></label>
           <label>Old price (KSh)<input name="regularPrice" type="number" min="0" step="1" /></label>
-          <label class="full">Image URL<input name="image" type="url" /></label>
+          <label class="full">Product image<input name="image" type="url" /></label>
           <label class="full">Description<textarea name="description" rows="6"></textarea></label>
           <label class="check-field"><input name="inStock" type="checkbox" /> In stock</label>
           <label class="check-field"><input name="onSale" type="checkbox" /> Show sale price</label>
