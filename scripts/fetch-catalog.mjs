@@ -20,7 +20,7 @@ const decodeEntities = (value = "") => value
 async function getJson(url, attempt = 1) {
   try {
     const response = await fetch(url, {
-      headers: { "user-agent": "Bavalink catalog migration/1.0" },
+      headers: { "user-agent": "Bevalink catalog migration/1.0" },
       signal: AbortSignal.timeout(120_000),
     });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -79,5 +79,5 @@ const payload = {
 };
 
 const target = join(process.cwd(), "dist", "catalog-data.js");
-await writeFile(target, `window.BAVALINK_CATALOG = ${JSON.stringify(payload)};\n`, "utf8");
+await writeFile(target, `window.BEVALINK_CATALOG = ${JSON.stringify(payload)};\n`, "utf8");
 console.log(`Saved ${products.length} products and ${cleanedCategories.length} categories.`);
