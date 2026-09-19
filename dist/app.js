@@ -1,7 +1,7 @@
 (() => {
-  const site = window.BAVALINK_SITE || {};
+  const site = window.BEVALINK_SITE || {};
   const PHONE = String(site.phoneDigits || "254724809656").replace(/\D/g, "");
-  const catalog = window.BAVALINK_CATALOG || { products: [], categories: [] };
+  const catalog = window.BEVALINK_CATALOG || { products: [], categories: [] };
   const products = catalog.products || [];
   const categories = catalog.categories || [];
   const productById = new Map(products.map((product) => [String(product.id), product]));
@@ -59,7 +59,7 @@
       if (typeof value === "string" && /^https?:\/\//i.test(value)) image.src = value;
     });
 
-    const brand = site.brandName || "Bavalink";
+    const brand = site.brandName || "Bevalink";
     document.title = `${brand} | Tools, Machinery & Equipment in Kenya`;
     document.querySelectorAll(".brand-name").forEach((element) => {
       const split = Math.max(1, Math.ceil(brand.length / 2));
@@ -177,8 +177,8 @@
   function openProduct(product) {
     if (!product) return;
     const hasDiscount = product.onSale && product.regularPrice > product.price;
-    const description = product.description || product.shortDescription || "Contact the Bavalink team for specifications, stock confirmation and delivery information.";
-    const message = encodeURIComponent(`Hello Bavalink, I am interested in ${product.name} (${money(product)}). Is it available?`);
+    const description = product.description || product.shortDescription || "Contact the Bevalink team for specifications, stock confirmation and delivery information.";
+    const message = encodeURIComponent(`Hello Bevalink, I am interested in ${product.name} (${money(product)}). Is it available?`);
     els.dialogContent.innerHTML = `
       <div class="dialog-grid">
         <div class="dialog-image">${imageMarkup(product)}</div>
@@ -204,11 +204,11 @@
   }
 
   function readCart() {
-    try { return JSON.parse(localStorage.getItem("bavalink-cart")) || {}; } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem("bevalink-cart")) || {}; } catch { return {}; }
   }
 
   function saveCart() {
-    localStorage.setItem("bavalink-cart", JSON.stringify(state.cart));
+    localStorage.setItem("bevalink-cart", JSON.stringify(state.cart));
     renderCart();
   }
 
@@ -240,7 +240,7 @@
         ${product.image ? `<img src="${escapeHTML(product.image)}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
         <div><h4>${escapeHTML(product.name)}</h4><p class="cart-item-price">${money(product)}</p><div class="qty-control"><button type="button" data-cart-minus="${product.id}" aria-label="Reduce quantity">−</button><span>${qty}</span><button type="button" data-cart-plus="${product.id}" aria-label="Increase quantity">+</button></div></div>
         <button class="remove-item" type="button" data-cart-remove="${product.id}" aria-label="Remove ${escapeHTML(product.name)}">×</button>
-      </article>`).join("") : `<div class="empty-cart"><strong>Your basket is empty</strong><p>Add a product and send the full order to Bavalink on WhatsApp.</p></div>`;
+      </article>`).join("") : `<div class="empty-cart"><strong>Your basket is empty</strong><p>Add a product and send the full order to Bevalink on WhatsApp.</p></div>`;
   }
 
   function openCart() {
@@ -262,7 +262,7 @@
     if (!rows.length) return;
     const total = rows.reduce((sum, row) => sum + (row.product.price / (10 ** row.product.minorUnit)) * row.qty, 0);
     const lines = rows.map(({ product, qty }, index) => `${index + 1}. ${product.name} × ${qty} — ${money(product, product.price * qty)}`);
-    const message = [`Hello Bavalink, I would like to order:`, "", ...lines, "", `Estimated total: KSh ${new Intl.NumberFormat("en-KE").format(total)}`, "", "Please confirm stock and delivery cost."].join("\n");
+    const message = [`Hello Bevalink, I would like to order:`, "", ...lines, "", `Estimated total: KSh ${new Intl.NumberFormat("en-KE").format(total)}`, "", "Please confirm stock and delivery cost."].join("\n");
     window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
@@ -314,7 +314,7 @@
 
   if (!products.length) {
     els.grid.innerHTML = `<div class="no-results"><strong>Catalogue unavailable</strong><p>Call or WhatsApp +254 724 809656 and we’ll help you find the equipment you need.</p></div>`;
-    els.resultCount.textContent = "Please contact Bavalink for the latest stock";
+    els.resultCount.textContent = "Please contact Bevalink for the latest stock";
     els.loadMore.hidden = true;
   } else {
     renderCategoryShowcase();
