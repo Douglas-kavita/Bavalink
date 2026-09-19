@@ -1,4 +1,4 @@
-# Bavalink
+# Bevalink
 
 A responsive tools and equipment catalogue for the Kenyan market.
 
@@ -16,8 +16,8 @@ After deployment, open `/admin` to edit the website wording, contact details, ho
 
 Add these private environment variables in **Vercel → Project Settings → Environment Variables**, then redeploy:
 
-- `BAVALINK_ADMIN_PASSWORD` — the password used to sign in to the dashboard
-- `BAVALINK_SESSION_SECRET` — a long random value used to secure admin sessions
+- `BEVALINK_ADMIN_PASSWORD` — the password used to sign in to the dashboard
+- `BEVALINK_SESSION_SECRET` — a long random value used to secure admin sessions
 - `GITHUB_TOKEN` — a fine-grained GitHub token limited to the `Bavalink` repository with **Contents: Read and write** permission
 
 Optional variables:
