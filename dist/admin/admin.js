@@ -86,7 +86,7 @@
       'input[data-category-field="image"]'
     ].join(",");
 
-    $(selector, root).forEach((input) => {
+    [...root.querySelectorAll(selector)].forEach((input) => {
       if (input.dataset.uploadReady) return;
       input.dataset.uploadReady = "true";
       const field = document.createElement("div");
@@ -270,8 +270,8 @@
         <input type="url" value="${escapeHTML(category.image || "")}" data-category-field="image" aria-label="Category image URL" />
         <button class="row-action" type="button" data-delete-category="${category.id}" aria-label="Delete ${escapeHTML(category.name)}">×</button>
       </div>`).join("") : `<div class="empty-table">No categories have been added.</div>`;
-  }
     enhanceImageInputs(els.categoryRows);
+  }
 
   function openProductEditor(id = null) {
     activeProductId = id == null ? null : Number(id);
