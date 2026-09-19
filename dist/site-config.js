@@ -1,5 +1,5 @@
-window.BAVALINK_SITE = {
-  brandName: "Bavalink",
+window.BEVALINK_SITE = {
+  brandName: "Bevalink",
   phoneDisplay: "+254 724 809656",
   phoneDigits: "254724809656",
   location: "Nairobi, Kenya",
@@ -12,7 +12,7 @@ window.BAVALINK_SITE = {
   heroTopImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/1500watts.jpg",
   heroBottomImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/Royce-welding-machine.jpg",
   whyImage: "https://davismerchants.co.ke/wp-content/uploads/2025/04/271b42b2-5231-4f6b-b7e9-c9c40f992d36.jpg",
-  catalogueKicker: "The Bavalink catalogue",
+  catalogueKicker: "The Bevalink catalogue",
   catalogueTitle: "Tools for every task",
   catalogueDescription: "Search the full range, compare prices and send your order directly to our team.",
   whyKicker: "A better way to source equipment",
