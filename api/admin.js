@@ -1,6 +1,6 @@
 const crypto = require("node:crypto");
 
-const COOKIE_NAME = "bavalink_admin";
+const COOKIE_NAME = "bevalink_admin";
 const SESSION_SECONDS = 8 * 60 * 60;
 
 function json(res, status, body) {
@@ -50,7 +50,7 @@ async function githubRequest(path, token, options = {}) {
       accept: "application/vnd.github+json",
       authorization: `Bearer ${token}`,
       "x-github-api-version": "2022-11-28",
-      "user-agent": "Bavalink Admin",
+      "user-agent": "Bevalink Admin",
       "content-type": "application/json",
       ...(options.headers || {})
     }
@@ -74,8 +74,8 @@ async function publishToGitHub(site, catalog, token, repository) {
   const ref = await githubRequest(`/repos/${encodedRepo}/git/ref/heads/${encodeURIComponent(branch)}`, token);
   const parentSha = ref.object.sha;
   const parentCommit = await githubRequest(`/repos/${encodedRepo}/git/commits/${parentSha}`, token);
-  const configContent = `window.BAVALINK_SITE = ${JSON.stringify(site, null, 2)};\n`;
-  const catalogContent = `window.BAVALINK_CATALOG = ${JSON.stringify(catalog)};\n`;
+  const configContent = `window.BEVALINK_SITE = ${JSON.stringify(site, null, 2)};\n`;
+  const catalogContent = `window.BEVALINK_CATALOG = ${JSON.stringify(catalog)};\n`;
   const [configBlob, catalogBlob] = await Promise.all([
     githubRequest(`/repos/${encodedRepo}/git/blobs`, token, { method: "POST", body: JSON.stringify({ content: configContent, encoding: "utf-8" }) }),
     githubRequest(`/repos/${encodedRepo}/git/blobs`, token, { method: "POST", body: JSON.stringify({ content: catalogContent, encoding: "utf-8" }) })
@@ -92,7 +92,7 @@ async function publishToGitHub(site, catalog, token, repository) {
   });
   const commit = await githubRequest(`/repos/${encodedRepo}/git/commits`, token, {
     method: "POST",
-    body: JSON.stringify({ message: "Update Bavalink website from admin", tree: tree.sha, parents: [parentSha] })
+    body: JSON.stringify({ message: "Update Bevalink website from admin", tree: tree.sha, parents: [parentSha] })
   });
   await githubRequest(`/repos/${encodedRepo}/git/refs/heads/${encodeURIComponent(branch)}`, token, {
     method: "PATCH",
@@ -102,8 +102,8 @@ async function publishToGitHub(site, catalog, token, repository) {
 }
 
 module.exports = async function handler(req, res) {
-  const adminPassword = process.env.BAVALINK_ADMIN_PASSWORD;
-  const sessionSecret = process.env.BAVALINK_SESSION_SECRET;
+  const adminPassword = process.env.BEVALINK_ADMIN_PASSWORD;
+  const sessionSecret = process.env.BEVALINK_SESSION_SECRET;
   const githubToken = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPO || "Douglas-kavita/Bavalink";
   const setupRequired = !adminPassword || !sessionSecret || !githubToken;
