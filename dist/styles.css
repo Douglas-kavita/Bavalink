@@ -348,3 +348,22 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Contact details and editable social links */
+.contact-actions{grid-template-columns:1fr 1fr;column-gap:2rem}
+.contact-line:nth-child(2){border-top:1px solid rgba(255,255,255,.35)}
+.contact-detail strong{font-family:"Manrope",system-ui,sans-serif;font-size:.98rem;line-height:1.45;text-transform:none}
+.contact-socials{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-top:1.35rem}
+.contact-socials>small{font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.72}
+.social-links,.footer-socials{display:flex;align-items:center;gap:.6rem}
+.social-links a,.footer-socials a{display:grid;place-items:center;border-radius:50%;transition:.2s ease}
+.social-links a{width:45px;height:45px;color:white;border:1px solid rgba(255,255,255,.42)}
+.social-links a.active:hover{color:var(--ink);background:white;transform:translateY(-2px)}
+.social-links svg{width:19px;height:19px}
+.social-links a[aria-disabled="true"],.footer-socials a[aria-disabled="true"]{opacity:.38;cursor:default}
+.footer-socials{margin:.7rem 0}
+.footer-socials a{width:34px;height:34px;color:#d8e2de;border:1px solid rgba(255,255,255,.18)}
+.footer-socials a.active:hover{color:var(--ink);background:var(--lime);border-color:var(--lime)}
+.footer-socials svg{width:15px;height:15px}
+@media(max-width:760px){.contact-actions{grid-template-columns:1fr}.contact-line:nth-child(2){border-top:0}.contact-socials{align-items:flex-start;flex-direction:column}}

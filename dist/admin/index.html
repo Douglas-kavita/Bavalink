@@ -20,12 +20,30 @@
         <p class="eyebrow">Secure administration</p>
         <h1>Manage your store.</h1>
         <p>Sign in to update the website, products, prices, images and categories.</p>
+        <p class="admin-email-line">Admin email: <strong id="admin-email">bevalink99@gmail.com</strong></p>
         <form id="login-form">
           <label>Admin password<input id="password" type="password" autocomplete="current-password" required /></label>
           <button type="submit">Open dashboard <span>→</span></button>
           <p class="form-error" id="login-error" role="alert"></p>
         </form>
+        <button class="password-reset-link" id="forgot-password-button" type="button" hidden>Forgot password? Reset it by email</button>
+        <p class="login-notice" id="login-notice" role="status"></p>
         <a class="back-link" href="/">← Back to Bevalink</a>
+      </section>
+    </main>
+
+    <main class="login-screen" id="reset-screen" hidden>
+      <section class="login-card">
+        <a class="admin-brand" href="/" aria-label="Bevalink website"><span>B</span><strong>BEVALINK</strong></a>
+        <p class="eyebrow">Secure password reset</p>
+        <h1>Create a new password.</h1>
+        <p>Choose a strong password containing at least 12 characters.</p>
+        <form id="reset-form">
+          <label>New password<input id="new-password" type="password" minlength="12" autocomplete="new-password" required /></label>
+          <label>Confirm new password<input id="confirm-password" type="password" minlength="12" autocomplete="new-password" required /></label>
+          <button type="submit">Save new password <span>→</span></button>
+          <p class="form-error" id="reset-error" role="alert"></p>
+        </form>
       </section>
     </main>
 
@@ -34,8 +52,8 @@
         <span class="setup-icon">!</span>
         <p class="eyebrow">One-time setup required</p>
         <h1>Connect the admin securely.</h1>
-        <p>Add the three protected environment variables shown below in Vercel, then redeploy. They remain private and are never included in the website.</p>
-        <ol><li><code>BEVALINK_ADMIN_PASSWORD</code></li><li><code>BEVALINK_SESSION_SECRET</code></li><li><code>GITHUB_TOKEN</code></li></ol>
+        <p>Add the protected environment variables below once, then redeploy. They remain private and are never included in the website.</p>
+        <ol><li><code>BEVALINK_SESSION_SECRET</code></li><li><code>GITHUB_TOKEN</code></li><li><code>BEVALINK_ADMIN_PASSWORD</code> (current login)</li><li><code>SUPABASE_URL</code> + <code>SUPABASE_ANON_KEY</code> (email reset)</li></ol>
         <a href="/">Return to website</a>
       </section>
     </div>
@@ -86,12 +104,13 @@
           <section class="view" data-view-panel="site">
             <div class="content-heading"><div><p class="eyebrow">Public website</p><h2>Website content</h2><p>Update the main wording and business details customers see.</p></div></div>
             <div class="form-grid">
-              <article class="form-card"><h3>Business details</h3><div class="field-grid two"><label>Business name<input data-setting="brandName" /></label><label>Phone number<input data-setting="phoneDisplay" /></label><label>Location<input data-setting="location" /></label><label>Delivery message<input data-setting="deliveryText" /></label></div><label>Top announcement<input data-setting="announcement" /></label></article>
+              <article class="form-card"><h3>Business details</h3><div class="field-grid two"><label>Business name<input data-setting="brandName" /></label><label>Phone number<input data-setting="phoneDisplay" /></label><label>Email address<input type="email" data-setting="email" /></label><label>Location / address<input data-setting="location" /></label><label>Business hours<input data-setting="businessHours" /></label><label>Delivery message<input data-setting="deliveryText" /></label></div><label>Top announcement<input data-setting="announcement" /></label></article>
               <article class="form-card"><h3>Homepage introduction</h3><label>Small heading<input data-setting="heroEyebrow" /></label><div class="field-grid two"><label>Main heading<input data-setting="heroTitle" /></label><label>Highlighted heading<input data-setting="heroAccent" /></label></div><label>Description<textarea data-setting="heroDescription" rows="3"></textarea></label></article>
               <article class="form-card"><h3>Homepage images</h3><label>Main hero image<input type="url" data-setting="heroMainImage" /></label><label>Top feature image<input type="url" data-setting="heroTopImage" /></label><label>Bottom feature image<input type="url" data-setting="heroBottomImage" /></label><label>Why Bevalink image<input type="url" data-setting="whyImage" /></label></article>
               <article class="form-card"><h3>Catalogue section</h3><label>Small heading<input data-setting="catalogueKicker" /></label><label>Main heading<input data-setting="catalogueTitle" /></label><label>Description<textarea data-setting="catalogueDescription" rows="3"></textarea></label></article>
               <article class="form-card"><h3>Why Bevalink section</h3><label>Small heading<input data-setting="whyKicker" /></label><label>Main heading<input data-setting="whyTitle" /></label><label>Description<textarea data-setting="whyDescription" rows="4"></textarea></label></article>
               <article class="form-card"><h3>Contact section</h3><label>Small heading<input data-setting="contactKicker" /></label><label>Main heading<input data-setting="contactTitle" /></label><label>Description<textarea data-setting="contactDescription" rows="3"></textarea></label></article>
+              <article class="form-card"><h3>Social media</h3><p class="card-help">Paste the full page link. The icon becomes clickable on the website after publishing.</p><label>Facebook page<input type="url" data-setting="facebookUrl" placeholder="https://facebook.com/yourpage" /></label><label>Instagram profile<input type="url" data-setting="instagramUrl" placeholder="https://instagram.com/yourprofile" /></label><label>X / Twitter profile<input type="url" data-setting="twitterUrl" placeholder="https://x.com/yourprofile" /></label></article>
               <article class="form-card"><h3>Footer</h3><label>Business description<textarea data-setting="footerDescription" rows="4"></textarea></label><label>Footer tagline<input data-setting="footerTagline" /></label></article>
             </div>
           </section>

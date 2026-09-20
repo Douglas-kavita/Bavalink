@@ -14,3 +14,11 @@
 .category-table .image-upload-status{display:none}
 .category-table .image-upload-preview{width:56px;height:44px}
 @media(max-width:760px){.image-upload-tools{align-items:flex-start;flex-direction:column}.category-table .image-upload-tools{align-items:center;flex-direction:row}}
+
+
+.admin-email-line{margin:.8rem 0 0!important;padding:9px 11px;color:#52615d!important;background:#f3f5f3;border-radius:7px;font-size:11px!important}
+.password-reset-link{width:100%;margin-top:13px;padding:10px;color:var(--ink);background:transparent;border:1px solid #ced5d2;border-radius:7px;cursor:pointer;font-size:11px;font-weight:800}
+.password-reset-link:hover{background:var(--paper)}
+.password-reset-link:disabled{opacity:.55;cursor:wait}
+.login-notice{min-height:18px;margin:10px 0 0!important;color:#277747!important;font-size:11px!important;font-weight:700}
+.card-help{margin:-4px 0 4px;color:var(--muted);font-size:10px;line-height:1.5}

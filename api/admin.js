@@ -137,14 +137,54 @@ async function uploadImageToGitHub(fileName, mimeType, data, token, repository) 
   return "/uploads/" + storedName;
 }
 
+
+async function supabaseRequest(path, baseUrl, anonKey, options = {}) {
+  const response = await fetch(String(baseUrl).replace(/\/$/, "") + path, {
+    ...options,
+    headers: {
+      apikey: anonKey,
+      authorization: "Bearer " + anonKey,
+      "content-type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error_description || data.msg || data.message || "Email authentication could not be completed.");
+  return data;
+}
+
+async function supabaseSignIn(email, password, baseUrl, anonKey) {
+  const data = await supabaseRequest("/auth/v1/token?grant_type=password", baseUrl, anonKey, {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+  if (String(data.user?.email || "").toLowerCase() !== String(email).toLowerCase()) throw new Error("Incorrect admin email or password.");
+  return data;
+}
+
+async function supabaseUser(accessToken, baseUrl, anonKey) {
+  return supabaseRequest("/auth/v1/user", baseUrl, anonKey, {
+    headers: { authorization: "Bearer " + accessToken }
+  });
+}
+
 module.exports = async function handler(req, res) {
   const adminPassword = process.env.BEVALINK_ADMIN_PASSWORD;
   const sessionSecret = process.env.BEVALINK_SESSION_SECRET;
   const githubToken = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPO || "Douglas-kavita/Bavalink";
-  const setupRequired = !adminPassword || !sessionSecret || !githubToken;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const adminEmail = String(process.env.BEVALINK_ADMIN_EMAIL || "bevalink99@gmail.com").toLowerCase();
+  const emailAuthEnabled = Boolean(supabaseUrl && supabaseAnonKey && adminEmail);
+  const setupRequired = (!adminPassword && !emailAuthEnabled) || !sessionSecret || !githubToken;
 
-  if (req.method === "GET") return json(res, 200, { authenticated: !setupRequired && authenticated(req, sessionSecret), setupRequired });
+  if (req.method === "GET") return json(res, 200, {
+    authenticated: !setupRequired && authenticated(req, sessionSecret),
+    setupRequired,
+    emailAuthEnabled,
+    adminEmail
+  });
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed." });
   if (!sameOrigin(req)) return json(res, 403, { error: "Request origin rejected." });
 
@@ -156,9 +196,53 @@ module.exports = async function handler(req, res) {
   }
   if (body.action === "login") {
     if (setupRequired) return json(res, 503, { error: "Admin setup is incomplete.", setupRequired: true });
-    if (!safeEqual(body.password || "", adminPassword)) return json(res, 401, { error: "Incorrect admin password." });
-    res.setHeader("set-cookie", `${COOKIE_NAME}=${createSession(sessionSecret)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${SESSION_SECONDS}`);
+    let valid = false;
+    if (emailAuthEnabled) {
+      try {
+        await supabaseSignIn(adminEmail, String(body.password || ""), supabaseUrl, supabaseAnonKey);
+        valid = true;
+      } catch {}
+    } else if (adminPassword) {
+      valid = safeEqual(body.password || "", adminPassword);
+    }
+    if (!valid) return json(res, 401, { error: "Incorrect admin password." });
+    res.setHeader("set-cookie", COOKIE_NAME + "=" + createSession(sessionSecret) + "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=" + SESSION_SECONDS);
     return json(res, 200, { authenticated: true });
+  }
+
+  if (body.action === "forgotPassword") {
+    if (!emailAuthEnabled) return json(res, 503, { error: "Email password reset has not been connected yet." });
+    try {
+      const redirectTo = process.env.BEVALINK_ADMIN_RESET_URL || "https://www.bevalink.com/admin?reset=1";
+      await supabaseRequest("/auth/v1/recover?redirect_to=" + encodeURIComponent(redirectTo), supabaseUrl, supabaseAnonKey, {
+        method: "POST",
+        body: JSON.stringify({ email: adminEmail })
+      });
+      return json(res, 200, { message: "A secure password reset link has been sent to " + adminEmail + "." });
+    } catch {
+      return json(res, 502, { error: "The reset email could not be sent right now. Please try again." });
+    }
+  }
+
+  if (body.action === "resetPassword") {
+    if (!emailAuthEnabled) return json(res, 503, { error: "Email password reset has not been connected yet." });
+    const password = String(body.password || "");
+    const accessToken = String(body.accessToken || "");
+    if (password.length < 12) return json(res, 400, { error: "Use a password containing at least 12 characters." });
+    if (!accessToken) return json(res, 400, { error: "This reset link is invalid or has expired." });
+    try {
+      const user = await supabaseUser(accessToken, supabaseUrl, supabaseAnonKey);
+      if (String(user.email || "").toLowerCase() !== adminEmail) return json(res, 403, { error: "This reset link is not for the Bevalink administrator." });
+      await supabaseRequest("/auth/v1/user", supabaseUrl, supabaseAnonKey, {
+        method: "PUT",
+        headers: { authorization: "Bearer " + accessToken },
+        body: JSON.stringify({ password })
+      });
+      res.setHeader("set-cookie", COOKIE_NAME + "=" + createSession(sessionSecret) + "; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=" + SESSION_SECONDS);
+      return json(res, 200, { authenticated: true, message: "Your admin password has been changed." });
+    } catch {
+      return json(res, 400, { error: "This reset link is invalid or has expired. Request a new email." });
+    }
   }
 
   if (body.action === "logout") {

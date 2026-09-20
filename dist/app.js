@@ -56,7 +56,7 @@
 
     document.querySelectorAll("[data-site-image]").forEach((image) => {
       const value = site[image.dataset.siteImage];
-      if (typeof value === "string" && /^https?:\/\//i.test(value)) image.src = value;
+      if (typeof value === "string" && /^(https?:\/\/|\/)/i.test(value)) image.src = value;
     });
 
     const brand = site.brandName || "Bevalink";
@@ -74,6 +74,32 @@
       link.href = url.toString();
     });
     document.querySelectorAll('[data-site="phoneDisplay"]').forEach((element) => element.textContent = phoneDisplay);
+
+    const email = site.email || "bevalink99@gmail.com";
+    document.querySelectorAll("[data-email-link]").forEach((link) => link.href = "mailto:" + email);
+    document.querySelectorAll("[data-social-link]").forEach((link) => {
+      const raw = String(site[link.dataset.socialLink] || "").trim();
+      let target = "";
+      if (raw) {
+        try {
+          const candidate = /^https?:\/\//i.test(raw) ? raw : "https://" + raw.replace(/^\/+/, "");
+          const parsed = new URL(candidate);
+          if (["http:", "https:"].includes(parsed.protocol)) target = parsed.toString();
+        } catch {}
+      }
+      if (target) {
+        link.href = target;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.classList.add("active");
+        link.removeAttribute("aria-disabled");
+      } else {
+        link.removeAttribute("href");
+        link.removeAttribute("target");
+        link.setAttribute("aria-disabled", "true");
+        link.classList.remove("active");
+      }
+    });
 
     const visibility = site.visibility || {};
     const sections = { categories: "#categories", catalogue: "#catalogue", why: "#why-us", contact: "#contact" };

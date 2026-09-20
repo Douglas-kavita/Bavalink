@@ -4,12 +4,15 @@
   let catalog = clone(window.BEVALINK_CATALOG || { categories: [], products: [] });
   let activeProductId = null;
   let dirty = false;
+  const recoveryParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const recoveryToken = recoveryParams.get("access_token");
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const els = {
-    loading: $("#loading-screen"), login: $("#login-screen"), setup: $("#setup-screen"), app: $("#admin-app"),
-    loginForm: $("#login-form"), loginError: $("#login-error"), save: $("#save-button"), saveState: $("#save-state"),
+    loading: $("#loading-screen"), login: $("#login-screen"), reset: $("#reset-screen"), setup: $("#setup-screen"), app: $("#admin-app"),
+    loginForm: $("#login-form"), loginError: $("#login-error"), loginNotice: $("#login-notice"), forgotPassword: $("#forgot-password-button"), adminEmail: $("#admin-email"),
+    resetForm: $("#reset-form"), resetError: $("#reset-error"), save: $("#save-button"), saveState: $("#save-state"),
     viewTitle: $("#view-title"), viewKicker: $("#view-kicker"), productRows: $("#product-rows"), categoryRows: $("#category-rows"),
     productSearch: $("#product-search"), categoryFilter: $("#product-category-filter"), dialog: $("#product-dialog"),
     productForm: $("#product-form"), dialogTitle: $("#product-dialog-title"), deleteProduct: $("#delete-product-button"),
@@ -152,12 +155,17 @@
   }
 
   function showOnly(element) {
-    [els.loading, els.login, els.setup, els.app].forEach((item) => item.hidden = item !== element);
+    [els.loading, els.login, els.reset, els.setup, els.app].forEach((item) => item.hidden = item !== element);
   }
 
   async function start() {
+    if (new URLSearchParams(location.search).get("reset") === "1" && recoveryToken) {
+      return showOnly(els.reset);
+    }
     try {
       const status = await request("status");
+      els.adminEmail.textContent = status.adminEmail || "bevalink99@gmail.com";
+      els.forgotPassword.hidden = !status.emailAuthEnabled;
       if (status.setupRequired) return showOnly(els.setup);
       if (!status.authenticated) return showOnly(els.login);
       openDashboard();
@@ -349,11 +357,51 @@
   els.loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     els.loginError.textContent = "";
+    els.loginNotice.textContent = "";
     const button = $("button[type='submit']", els.loginForm);
     button.disabled = true;
     try { await request("login", { password: $("#password").value }); $("#password").value = ""; openDashboard(); }
     catch (error) { els.loginError.textContent = error.message; }
     finally { button.disabled = false; }
+  });
+
+  els.forgotPassword.addEventListener("click", async () => {
+    els.loginError.textContent = "";
+    els.loginNotice.textContent = "";
+    els.forgotPassword.disabled = true;
+    els.forgotPassword.textContent = "Sending reset email…";
+    try {
+      const result = await request("forgotPassword");
+      els.loginNotice.textContent = result.message || "Check the admin email for the password reset link.";
+    } catch (error) {
+      els.loginError.textContent = error.message;
+    } finally {
+      els.forgotPassword.disabled = false;
+      els.forgotPassword.textContent = "Forgot password? Reset it by email";
+    }
+  });
+
+  els.resetForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    els.resetError.textContent = "";
+    const password = $("#new-password").value;
+    const confirmation = $("#confirm-password").value;
+    if (password.length < 12) { els.resetError.textContent = "Use at least 12 characters."; return; }
+    if (password !== confirmation) { els.resetError.textContent = "The passwords do not match."; return; }
+    const button = $("button[type='submit']", els.resetForm);
+    button.disabled = true;
+    try {
+      await request("resetPassword", { accessToken: recoveryToken, password });
+      history.replaceState(null, "", "/admin");
+      $("#new-password").value = "";
+      $("#confirm-password").value = "";
+      openDashboard();
+      toast("Your admin password has been changed.");
+    } catch (error) {
+      els.resetError.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
   });
   $$(".nav-item").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
   $$('[data-jump]').forEach((button) => button.addEventListener("click", () => { switchView(button.dataset.jump); if (button.dataset.jump === "products") openProductEditor(); }));
