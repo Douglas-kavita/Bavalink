@@ -2,6 +2,8 @@ const crypto = require("node:crypto");
 
 const COOKIE_NAME = "bevalink_admin";
 const SESSION_SECONDS = 8 * 60 * 60;
+const DEFAULT_SUPABASE_URL = "https://opaamrcdaqztuadcxlol.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_MHJOtiqZlpfdhIx-y5QHXg_-QrJOZwb";
 
 function json(res, status, body) {
   res.statusCode = status;
@@ -143,7 +145,6 @@ async function supabaseRequest(path, baseUrl, anonKey, options = {}) {
     ...options,
     headers: {
       apikey: anonKey,
-      authorization: "Bearer " + anonKey,
       "content-type": "application/json",
       ...(options.headers || {})
     }
@@ -173,8 +174,8 @@ module.exports = async function handler(req, res) {
   const sessionSecret = process.env.BEVALINK_SESSION_SECRET;
   const githubToken = process.env.GITHUB_TOKEN;
   const repository = process.env.GITHUB_REPO || "Douglas-kavita/Bavalink";
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_PUBLISHABLE_KEY;
   const adminEmail = String(process.env.BEVALINK_ADMIN_EMAIL || "bevalink99@gmail.com").toLowerCase();
   const emailAuthEnabled = Boolean(supabaseUrl && supabaseAnonKey && adminEmail);
   const setupRequired = (!adminPassword && !emailAuthEnabled) || !sessionSecret || !githubToken;
@@ -202,7 +203,8 @@ module.exports = async function handler(req, res) {
         await supabaseSignIn(adminEmail, String(body.password || ""), supabaseUrl, supabaseAnonKey);
         valid = true;
       } catch {}
-    } else if (adminPassword) {
+    }
+    if (!valid && adminPassword) {
       valid = safeEqual(body.password || "", adminPassword);
     }
     if (!valid) return json(res, 401, { error: "Incorrect admin password." });
