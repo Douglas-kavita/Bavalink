@@ -221,6 +221,25 @@
     return `KSh ${new Intl.NumberFormat("en-KE").format(Number(value || 0) / (10 ** (product.minorUnit ?? 2)))}`;
   }
 
+  function moneyAmount(value) {
+    return `KSh ${new Intl.NumberFormat("en-KE").format(Math.round(Number(value || 0)))}`;
+  }
+
+  function productPricing(product) {
+    const unit = 10 ** (product.minorUnit ?? 2);
+    const current = Number(product.price || 0) / unit;
+    const supplier = current ? Math.round(current / 1.6) : 0;
+    const previous = Number(product.regularPrice || 0) / unit || Math.round(supplier * 1.8);
+    return { supplier, profit: current - supplier, current, previous };
+  }
+
+  function updatePriceFields(form) {
+    const supplier = Math.max(0, Number(form.supplierPrice.value || 0));
+    form.profitAmount.value = Math.round(supplier * 0.6);
+    form.price.value = Math.round(supplier * 1.6);
+    form.regularPrice.value = Math.round(supplier * 1.8);
+  }
+
   function escapeHTML(value = "") {
     return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
   }
@@ -259,14 +278,17 @@
       const matchesText = !query || `${product.name} ${product.sku || ""} ${(product.categories || []).join(" ")}`.toLowerCase().includes(query);
       return matchesText && (category === "All" || product.categories?.includes(category));
     });
-    els.productRows.innerHTML = rows.length ? rows.map((product) => `
-      <div class="table-row" data-product-id="${product.id}">
-        <div class="product-cell">${product.image ? `<img src="${escapeHTML(product.image)}" alt="" loading="lazy" />` : `<span class="product-placeholder">B</span>`}<div><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.sku || `ID ${product.id}`)}</small></div></div>
-        <span>${escapeHTML(product.categories?.[0] || "Uncategorised")}</span>
-        <span class="price-cell">${money(product)}</span>
-        <span class="status-pill ${product.inStock ? "" : "out"}">${product.inStock ? "In stock" : "Check stock"}</span>
-        <button class="row-action" type="button" data-edit-product="${product.id}" aria-label="Edit ${escapeHTML(product.name)}">•••</button>
-      </div>`).join("") : `<div class="empty-table">No products match this search.</div>`;
+    els.productRows.innerHTML = rows.length ? rows.map((product) => {
+      const pricing = productPricing(product);
+      return `
+        <div class="table-row" data-product-id="${product.id}">
+          <div class="product-cell">${product.image ? `<img src="${escapeHTML(product.image)}" alt="" loading="lazy" />` : `<span class="product-placeholder">B</span>`}<div><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.sku || `ID ${product.id}`)}</small></div></div>
+          <span>${escapeHTML(product.categories?.[0] || "Uncategorised")}</span>
+          <span class="price-cell"><small>Supplier ${moneyAmount(pricing.supplier)}</small><strong>Website ${moneyAmount(pricing.current)}</strong><small class="profit-line">Profit +${moneyAmount(pricing.profit)}</small><del>Old ${moneyAmount(pricing.previous)}</del></span>
+          <span class="status-pill ${product.inStock ? "" : "out"}">${product.inStock ? "In stock" : "Check stock"}</span>
+          <button class="row-action" type="button" data-edit-product="${product.id}" aria-label="Edit ${escapeHTML(product.name)}">•••</button>
+        </div>`;
+    }).join("") : `<div class="empty-table">No products match this search.</div>`;
   }
 
   function renderCategories() {
@@ -292,12 +314,15 @@
     const form = els.productForm.elements;
     form.name.value = product.name || "";
     form.sku.value = product.sku || "";
-    form.price.value = Number(product.price || 0) / (10 ** (product.minorUnit ?? 2));
-    form.regularPrice.value = Number(product.regularPrice || product.price || 0) / (10 ** (product.minorUnit ?? 2));
+    const pricing = productPricing(product);
+    form.supplierPrice.value = pricing.supplier;
+    form.profitAmount.value = pricing.profit;
+    form.price.value = pricing.current;
+    form.regularPrice.value = pricing.previous;
     form.image.value = product.image || "";
     form.description.value = product.description || "";
     form.inStock.checked = product.inStock !== false;
-    form.onSale.checked = Boolean(product.onSale);
+    form.onSale.checked = true;
     form.category.innerHTML = catalog.categories.map((category) => `<option value="${escapeHTML(category.name)}">${escapeHTML(category.name)}</option>`).join("");
     form.category.value = product.categories?.[0] || catalog.categories[0]?.name || "";
     els.dialog.dataset.draft = JSON.stringify(product);
@@ -308,12 +333,15 @@
     const form = els.productForm.elements;
     const draft = JSON.parse(els.dialog.dataset.draft);
     const minorUnit = Number(draft.minorUnit ?? 2);
+    const supplierPrice = Math.max(0, Number(form.supplierPrice.value || 0));
+    const websitePrice = Math.round(supplierPrice * 1.6);
+    const previousPrice = Math.round(supplierPrice * 1.8);
     const updated = {
       ...draft,
       name: form.name.value.trim(), sku: form.sku.value.trim(), description: form.description.value.trim(), shortDescription: form.description.value.trim(),
       categories: [form.category.value], image: form.image.value.trim(), gallery: form.image.value.trim() ? [form.image.value.trim()] : [],
-      price: Math.round(Number(form.price.value || 0) * (10 ** minorUnit)), regularPrice: Math.round(Number(form.regularPrice.value || form.price.value || 0) * (10 ** minorUnit)),
-      salePrice: form.onSale.checked ? Math.round(Number(form.price.value || 0) * (10 ** minorUnit)) : 0, inStock: form.inStock.checked, onSale: form.onSale.checked
+      price: websitePrice * (10 ** minorUnit), regularPrice: previousPrice * (10 ** minorUnit),
+      salePrice: websitePrice * (10 ** minorUnit), inStock: form.inStock.checked, onSale: supplierPrice > 0
     };
     if (!updated.name) return;
     if (activeProductId == null) catalog.products.unshift(updated);
@@ -414,6 +442,7 @@
   els.productRows.addEventListener("click", (event) => { const button = event.target.closest("[data-edit-product]"); if (button) openProductEditor(button.dataset.editProduct); });
   $$(".dialog-close").forEach((button) => button.addEventListener("click", () => els.dialog.close()));
   els.productForm.addEventListener("submit", (event) => { event.preventDefault(); saveProduct(); });
+  els.productForm.elements.supplierPrice.addEventListener("input", () => updatePriceFields(els.productForm.elements));
   els.deleteProduct.addEventListener("click", () => { if (activeProductId == null || !confirm("Delete this product permanently?")) return; catalog.products = catalog.products.filter((item) => Number(item.id) !== activeProductId); els.dialog.close(); markDirty(); renderEverything(); toast("Product deleted"); });
   $("#add-category-button").addEventListener("click", () => { const name = prompt("New category name"); if (!name?.trim()) return; catalog.categories.push({ id: Date.now(), name: name.trim(), slug: name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""), count: 0, image: "" }); markDirty(); renderEverything(); });
   els.categoryRows.addEventListener("change", (event) => {

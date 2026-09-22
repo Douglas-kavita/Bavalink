@@ -116,9 +116,9 @@
           </section>
 
           <section class="view" data-view-panel="products">
-            <div class="content-heading product-heading"><div><p class="eyebrow">Catalogue manager</p><h2>Products</h2><p>Edit product details, pricing, images and stock.</p></div><button class="save-button" id="add-product-button" type="button">+ Add product</button></div>
+            <div class="content-heading product-heading"><div><p class="eyebrow">Catalogue manager</p><h2>Products</h2><p>Supplier price + 60% creates the website price. The crossed-out price uses an 80% markup.</p></div><button class="save-button" id="add-product-button" type="button">+ Add product</button></div>
             <div class="table-toolbar"><label class="admin-search">⌕<input id="product-search" type="search" placeholder="Search products…" /></label><select id="product-category-filter"><option value="All">All categories</option></select></div>
-            <div class="data-table product-table"><div class="table-head"><span>Product</span><span>Category</span><span>Price</span><span>Status</span><span></span></div><div id="product-rows"></div></div>
+            <div class="data-table product-table"><div class="table-head"><span>Product</span><span>Category</span><span>Before / profit / after</span><span>Status</span><span></span></div><div id="product-rows"></div></div>
           </section>
 
           <section class="view" data-view-panel="categories">
@@ -144,12 +144,14 @@
           <label class="full">Product name<input name="name" required /></label>
           <label>Category<select name="category" required></select></label>
           <label>SKU<input name="sku" /></label>
-          <label>Current price (KSh)<input name="price" type="number" min="0" step="1" required /></label>
-          <label>Old price (KSh)<input name="regularPrice" type="number" min="0" step="1" /></label>
+          <label>Supplier price — before (KSh)<input name="supplierPrice" type="number" min="0" step="1" required /></label>
+          <label>Profit added — 60% (KSh)<input name="profitAmount" type="number" readonly /></label>
+          <label>Website price — after (KSh)<input name="price" type="number" readonly /></label>
+          <label>Old crossed-out price — 80% (KSh)<input name="regularPrice" type="number" readonly /></label>
           <label class="full">Product image<input name="image" type="url" /></label>
           <label class="full">Description<textarea name="description" rows="6"></textarea></label>
           <label class="check-field"><input name="inStock" type="checkbox" /> In stock</label>
-          <label class="check-field"><input name="onSale" type="checkbox" /> Show sale price</label>
+          <label class="check-field"><input name="onSale" type="checkbox" checked disabled /> Show old crossed-out price</label>
         </div>
         <footer><button class="danger-button" id="delete-product-button" type="button">Delete product</button><div><button class="secondary-button dialog-close" type="button">Cancel</button><button class="save-button" type="submit">Save product</button></div></footer>
       </form>

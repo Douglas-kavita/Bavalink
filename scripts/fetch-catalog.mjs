@@ -17,28 +17,8 @@ const decodeEntities = (value = "") => value
   .replace(/\s+/g, " ")
   .trim();
 
-const profitForPrice = (price, minorUnit = 2) => {
-  if (!price) return 0;
-  const unit = 10 ** minorUnit;
-  const amount = price / unit;
-  const targetProfit = amount < 1_000
-    ? 300
-    : amount < 2_000
-      ? 500
-      : amount < 5_000
-        ? 1_000
-        : amount < 10_000
-          ? 2_000
-          : amount < 15_000
-            ? 2_500
-            : amount < 20_000
-              ? 3_000
-              : amount <= 30_000
-                ? 4_000
-                : 5_000;
-  const profit = Math.min(targetProfit, amount * 0.6);
-  return Math.round(profit * unit);
-};
+const sellingPriceFor = (supplierPrice) => Math.round(supplierPrice * 1.6);
+const previousPriceFor = (supplierPrice) => Math.round(supplierPrice * 1.8);
 
 async function getJson(url, attempt = 1) {
   try {
@@ -65,9 +45,8 @@ const [categories, ...pages] = await Promise.all([
 const products = pages.flat().map((product) => {
   const minorUnit = Number(product.prices?.currency_minor_unit ?? 2);
   const supplierPrice = Number(product.prices?.price || 0);
-  const supplierRegularPrice = Number(product.prices?.regular_price || supplierPrice);
-  const supplierSalePrice = Number(product.prices?.sale_price || 0);
-  const profit = profitForPrice(supplierPrice, minorUnit);
+  const sellingPrice = sellingPriceFor(supplierPrice);
+  const previousPrice = previousPriceFor(supplierPrice);
 
   return {
     id: product.id,
@@ -79,12 +58,12 @@ const products = pages.flat().map((product) => {
     categories: product.categories.map((category) => decodeEntities(category.name)),
     image: product.images?.[0]?.src || "",
     gallery: (product.images || []).slice(0, 5).map((image) => image.src),
-    price: supplierPrice ? supplierPrice + profit : 0,
-    regularPrice: supplierRegularPrice ? supplierRegularPrice + profit : 0,
-    salePrice: supplierSalePrice ? supplierSalePrice + profit : 0,
+    price: supplierPrice ? sellingPrice : 0,
+    regularPrice: supplierPrice ? previousPrice : 0,
+    salePrice: supplierPrice ? sellingPrice : 0,
     currency: product.prices?.currency_code || "KES",
     minorUnit,
-    onSale: Boolean(product.on_sale),
+    onSale: Boolean(supplierPrice),
     inStock: Boolean(product.is_in_stock),
     rating: Number(product.average_rating || 0),
     reviewCount: Number(product.review_count || 0),
