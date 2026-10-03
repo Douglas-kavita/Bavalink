@@ -289,6 +289,14 @@
     const total = rows.reduce((sum, row) => sum + (row.product.price / (10 ** row.product.minorUnit)) * row.qty, 0);
     const lines = rows.map(({ product, qty }, index) => `${index + 1}. ${product.name} × ${qty} — ${money(product, product.price * qty)}`);
     const message = [`Hello Bevalink, I would like to order:`, "", ...lines, "", `Estimated total: KSh ${new Intl.NumberFormat("en-KE").format(total)}`, "", "Please confirm stock and delivery cost."].join("\n");
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "conversion", {
+        send_to: "AW-18492819458/QpNiCLnI5Y8dEIKQiPJE",
+        value: total,
+        currency: "KES",
+        transaction_id: `whatsapp-${Date.now()}`
+      });
+    }
     window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
