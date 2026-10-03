@@ -56,7 +56,7 @@
 
     document.querySelectorAll("[data-site-image]").forEach((image) => {
       const value = site[image.dataset.siteImage];
-      if (typeof value === "string" && /^(https?:\/\/|\/)/i.test(value)) image.src = value;
+      if (typeof value === "string" && /^(https?:\/\/|\/)/i.test(value)) image.src = imageSource(value);
     });
 
     const brand = site.brandName || "Bevalink";
@@ -118,9 +118,24 @@
     return `KSh ${new Intl.NumberFormat("en-KE", { maximumFractionDigits: 0 }).format(amount)}`;
   }
 
+  function imageSource(url) {
+    const value = String(url || "").trim();
+    if (!value) return "";
+    try {
+      const parsed = new URL(value, window.location.origin);
+      if (parsed.origin === window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return parsed.toString();
+      if (["davismerchants.co.ke", "www.davismerchants.co.ke"].includes(parsed.hostname.toLowerCase())) {
+        return "/api/image?url=" + encodeURIComponent(parsed.toString());
+      }
+      return parsed.toString();
+    } catch {
+      return value;
+    }
+  }
+
   function imageMarkup(product, className = "") {
     if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
-    return `<img class="${className}" src="${escapeHTML(product.image)}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))" />`;
+    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))" />`;
   }
 
   function getFilteredProducts() {
@@ -142,7 +157,7 @@
     const selected = priority.map((name) => categories.find((item) => item.name === name)).filter(Boolean);
     els.categoryShowcase.innerHTML = selected.map((category) => `
       <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
-        ${category.image ? `<img src="${escapeHTML(category.image)}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
+        ${category.image ? `<img src="${escapeHTML(imageSource(category.image))}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
         <div><div><h3>${escapeHTML(category.name)}</h3><p>${category.count} products</p></div><b>↘</b></div>
       </article>
     `).join("");
