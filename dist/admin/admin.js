@@ -327,6 +327,7 @@
     form.category.value = product.categories?.[0] || catalog.categories[0]?.name || "";
     els.dialog.dataset.draft = JSON.stringify(product);
     els.dialog.showModal();
+    enhanceImageInputs(els.dialog);
   }
 
   function saveProduct() {
