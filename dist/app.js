@@ -131,8 +131,9 @@
   }
 
   function imageMarkup(product, className = "") {
-    if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
-    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))" />`;
+    const source = imageSource(product.image);
+    if (!source) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
+    return `<img class="${className}" src="${escapeHTML(source)}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))" />`;
   }
 
   function getFilteredProducts() {
@@ -154,7 +155,7 @@
     const selected = priority.map((name) => categories.find((item) => item.name === name)).filter(Boolean);
     els.categoryShowcase.innerHTML = selected.map((category) => `
       <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
-        ${category.image ? `<img src="${escapeHTML(imageSource(category.image))}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
+        ${imageSource(category.image) ? `<img src="${escapeHTML(imageSource(category.image))}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
         <div><div><h3>${escapeHTML(category.name)}</h3><p>${category.count} products</p></div><b>↘</b></div>
       </article>
     `).join("");
@@ -275,7 +276,7 @@
     els.checkout.disabled = rows.length === 0;
     els.cartItems.innerHTML = rows.length ? rows.map(({ product, qty }) => `
       <article class="cart-item">
-        ${product.image ? `<img src="${escapeHTML(imageSource(product.image))}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
+        ${imageSource(product.image) ? `<img src="${escapeHTML(imageSource(product.image))}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
         <div><h4>${escapeHTML(product.name)}</h4><p class="cart-item-price">${money(product)}</p><div class="qty-control"><button type="button" data-cart-minus="${product.id}" aria-label="Reduce quantity">−</button><span>${qty}</span><button type="button" data-cart-plus="${product.id}" aria-label="Increase quantity">+</button></div></div>
         <button class="remove-item" type="button" data-cart-remove="${product.id}" aria-label="Remove ${escapeHTML(product.name)}">×</button>
       </article>`).join("") : `<div class="empty-cart"><strong>Your basket is empty</strong><p>Add a product and send the full order to Bevalink on WhatsApp.</p></div>`;
