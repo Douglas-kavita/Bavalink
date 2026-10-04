@@ -178,29 +178,23 @@
     }).join("");
 
     els.categoryShowcase.querySelectorAll("img").forEach((img) => {
+      img.dataset.originalUrl = img.src;
       img.addEventListener("error", () => {
-        if (img.dataset.proxyTried === "1") {
+        if (img.dataset.fallbackTried === "1") {
           img.style.display = "none";
-          img.parentElement.classList.add("image-failed");
           return;
         }
-        img.dataset.proxyTried = "1";
-        const original = img.getAttribute("src") || "";
-        if (/^https?:\\/\\//i.test(original)) {
-          img.src = "/api/image?url=" + encodeURIComponent(original);
-          return;
-        }
+        img.dataset.fallbackTried = "1";
         const categoryName = img.alt;
+        const category = categories.find((item) => item.name === categoryName);
         const fallbackProduct = products.find((product) =>
           Array.isArray(product.categories) &&
           product.categories.includes(categoryName) &&
           product.image
         );
-        if (fallbackProduct?.image) {
-          img.src = imageSource(fallbackProduct.image);
-        }
+        img.src = fallbackProduct?.image || (category?.image || "");
       });
-    });
+    });;
   }
 
   function renderFilters() {
