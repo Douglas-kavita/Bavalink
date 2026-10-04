@@ -18,4 +18,4 @@ jobs:
         with:
           name: Bavalink-2026-10-04
           path: Bavalink-2026-10-04.zip
-          retention-days: 7
+          retention-days: 14
