@@ -305,7 +305,6 @@
           <div class="dialog-meta"><span>${product.inStock ? "Available to order" : "Confirm stock"}</span>${product.sku ? `<span>SKU: ${escapeHTML(product.sku)}</span>` : ""}<span>Countrywide delivery</span></div>
           <div class="dialog-actions">
             <button class="dialog-add" type="button" data-add-product="${product.id}">Add to Cart</button><a class="dialog-whatsapp" href="https://wa.me/${PHONE}?text=${message}" target="_blank" rel="noreferrer">Order via WhatsApp ↗</a>
-            <a class="dialog-whatsapp" href="https://wa.me/${PHONE}?text=${message}" target="_blank" rel="noreferrer">Ask on WhatsApp ↗</a>
           </div>
         </div>
       </div>`;
