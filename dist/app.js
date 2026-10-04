@@ -123,13 +123,10 @@
     if (!value) return "";
     try {
       const parsed = new URL(value, window.location.origin);
-      if (parsed.origin === window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return parsed.toString();
-      if (["davismerchants.co.ke", "www.davismerchants.co.ke"].includes(parsed.hostname.toLowerCase())) {
-        return "/api/image?url=" + encodeURIComponent(parsed.toString());
-      }
+      if (parsed.origin !== window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return "";
       return parsed.toString();
     } catch {
-      return value;
+      return "";
     }
   }
 
@@ -278,7 +275,7 @@
     els.checkout.disabled = rows.length === 0;
     els.cartItems.innerHTML = rows.length ? rows.map(({ product, qty }) => `
       <article class="cart-item">
-        ${product.image ? `<img src="${escapeHTML(product.image)}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
+        ${product.image ? `<img src="${escapeHTML(imageSource(product.image))}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
         <div><h4>${escapeHTML(product.name)}</h4><p class="cart-item-price">${money(product)}</p><div class="qty-control"><button type="button" data-cart-minus="${product.id}" aria-label="Reduce quantity">−</button><span>${qty}</span><button type="button" data-cart-plus="${product.id}" aria-label="Increase quantity">+</button></div></div>
         <button class="remove-item" type="button" data-cart-remove="${product.id}" aria-label="Remove ${escapeHTML(product.name)}">×</button>
       </article>`).join("") : `<div class="empty-cart"><strong>Your basket is empty</strong><p>Add a product and send the full order to Bevalink on WhatsApp.</p></div>`;
