@@ -14,6 +14,7 @@
     loginForm: $("#login-form"), loginError: $("#login-error"), loginNotice: $("#login-notice"), forgotPassword: $("#forgot-password-button"), adminEmail: $("#admin-email"),
     resetForm: $("#reset-form"), resetError: $("#reset-error"), save: $("#save-button"), saveState: $("#save-state"),
     viewTitle: $("#view-title"), viewKicker: $("#view-kicker"), productRows: $("#product-rows"), categoryRows: $("#category-rows"),
+    imageRows: $("#image-library-rows"), imageSearch: $("#image-library-search"), ownedImageCount: $("#owned-image-count"), fallbackImageCount: $("#fallback-image-count"), totalImageCount: $("#total-image-count"),
     productSearch: $("#product-search"), categoryFilter: $("#product-category-filter"), dialog: $("#product-dialog"),
     productForm: $("#product-form"), dialogTitle: $("#product-dialog-title"), deleteProduct: $("#delete-product-button"),
     toast: $("#admin-toast"), sidebar: $(".sidebar")
@@ -202,7 +203,7 @@
   }
 
   function switchView(name) {
-    const titles = { overview: ["Store control centre", "Overview"], site: ["Public website", "Website content"], products: ["Catalogue manager", "Products"], categories: ["Store navigation", "Categories"], appearance: ["Brand presentation", "Appearance"] };
+    const titles = { overview: ["Store control centre", "Overview"], site: ["Public website", "Website content"], products: ["Catalogue manager", "Products"], images: ["Bevalink-owned media", "Image Library"], categories: ["Store navigation", "Categories"], appearance: ["Brand presentation", "Appearance"] };
     $$(".nav-item").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
     $$("[data-view-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.viewPanel === name));
     els.viewKicker.textContent = titles[name][0];
@@ -217,6 +218,8 @@
     $$('[data-visibility]').forEach((input) => input.checked = site.visibility?.[input.dataset.visibility] !== false);
   }
 
+  function productImage(product) { return String(product?.ownedImage || product?.image || "").trim(); }
+
   function money(product, value = product.price) {
     return `KSh ${new Intl.NumberFormat("en-KE").format(Number(value || 0) / (10 ** (product.minorUnit ?? 2)))}`;
   }
@@ -228,15 +231,15 @@
   function productPricing(product) {
     const unit = 10 ** (product.minorUnit ?? 2);
     const current = Number(product.price || 0) / unit;
-    const supplier = current ? Math.round(current / 1.6) : 0;
+    const supplier = current ? Math.round(current / 1.35) : 0;
     const previous = Number(product.regularPrice || 0) / unit || Math.round(supplier * 1.8);
     return { supplier, profit: current - supplier, current, previous };
   }
 
   function updatePriceFields(form) {
     const supplier = Math.max(0, Number(form.supplierPrice.value || 0));
-    form.profitAmount.value = Math.round(supplier * 0.6);
-    form.price.value = Math.round(supplier * 1.6);
+    form.profitAmount.value = Math.round(supplier * 0.35);
+    form.price.value = Math.round(supplier * 1.35);
     form.regularPrice.value = Math.round(supplier * 1.8);
   }
 
@@ -250,6 +253,7 @@
     renderProductFilters();
     renderProducts();
     renderCategories();
+    renderImageLibrary();
   }
 
   function refreshCounts() {
@@ -282,13 +286,63 @@
       const pricing = productPricing(product);
       return `
         <div class="table-row" data-product-id="${product.id}">
-          <div class="product-cell">${product.image ? `<img src="${escapeHTML(product.image)}" alt="" loading="lazy" />` : `<span class="product-placeholder">B</span>`}<div><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.sku || `ID ${product.id}`)}</small></div></div>
+          <div class="product-cell">${productImage(product) ? `<img src="${escapeHTML(productImage(product))}" alt="" loading="lazy" />` : `<span class="product-placeholder">B</span>`}<div><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.sku || `ID ${product.id}`)}</small></div></div>
           <span>${escapeHTML(product.categories?.[0] || "Uncategorised")}</span>
           <span class="price-cell"><small>Supplier ${moneyAmount(pricing.supplier)}</small><strong>Website ${moneyAmount(pricing.current)}</strong><small class="profit-line">Profit +${moneyAmount(pricing.profit)}</small><del>Old ${moneyAmount(pricing.previous)}</del></span>
           <span class="status-pill ${product.inStock ? "" : "out"}">${product.inStock ? "In stock" : "Check stock"}</span>
           <button class="row-action" type="button" data-edit-product="${product.id}" aria-label="Edit ${escapeHTML(product.name)}">•••</button>
         </div>`;
     }).join("") : `<div class="empty-table">No products match this search.</div>`;
+  }
+
+  function renderImageLibrary() {
+    const query = (els.imageSearch?.value || "").trim().toLowerCase();
+    const rows = catalog.products.filter((product) => {
+      const haystack = `${product.name} ${product.sku || ""} ${(product.categories || []).join(" ")}`.toLowerCase();
+      return !query || haystack.includes(query);
+    });
+    const owned = catalog.products.filter((product) => product.ownedImage).length;
+    if (els.ownedImageCount) els.ownedImageCount.textContent = owned;
+    if (els.fallbackImageCount) els.fallbackImageCount.textContent = catalog.products.length - owned;
+    if (els.totalImageCount) els.totalImageCount.textContent = catalog.products.length;
+    if (!els.imageRows) return;
+    els.imageRows.innerHTML = rows.length ? rows.map((product) => {
+      const ownedImage = String(product.ownedImage || "").trim();
+      const fallback = String(product.image || "").trim();
+      const preview = productImage(product);
+      return `<article class="image-library-card" data-image-product-id="${product.id}"><div class="image-library-photo">${preview ? `<img src="${escapeHTML(preview)}" alt="${escapeHTML(product.name)}" loading="lazy">` : `<span>B</span>`}</div><div class="image-library-info"><strong>${escapeHTML(product.name)}</strong><small>${escapeHTML(product.categories?.[0] || "Uncategorised")} · ${moneyAmount(product.price / (10 ** (product.minorUnit ?? 2)))}</small><span class="image-source-pill ${ownedImage ? "owned" : "fallback"}">${ownedImage ? "Bevalink-owned" : "Davis fallback"}</span></div><div class="image-library-actions"><button type="button" class="secondary-button" data-image-upload="${product.id}">${ownedImage ? "Replace image" : "Upload image"}</button>${fallback ? `<button type="button" class="save-button" data-image-import="${product.id}" ${ownedImage ? "disabled" : ""}>${ownedImage ? "Imported" : "Import Davis copy"}</button>` : ""}</div></article>`;
+    }).join("") : `<div class="empty-table">No products match this search.</div>`;
+  }
+
+  async function importDavisProducts(productsToImport) {
+    const items = productsToImport.filter((product) => product.image && !product.ownedImage).slice(0, 10).map((product) => ({ id: product.id, url: product.image, name: product.name }));
+    if (!items.length) return 0;
+    const result = await request("importDavisBatch", { items });
+    let changed = 0;
+    (result.images || []).forEach((item) => { const product = catalog.products.find((entry) => String(entry.id) === String(item.id)); if (product && item.url) { product.ownedImage = item.url; changed++; } });
+    if (changed) { markDirty(); renderEverything(); }
+    return changed;
+  }
+
+  async function uploadOwnedForProduct(product) {
+    const picker = document.createElement("input"); picker.type = "file"; picker.accept = "image/jpeg,image/png,image/webp"; picker.click();
+    picker.addEventListener("change", async () => { const file = picker.files?.[0]; if (!file) return; try { const result = await uploadImage(file); product.ownedImage = result.url; markDirty(); renderEverything(); toast("Bevalink-owned image uploaded. Publish changes when ready."); } catch (error) { toast(error.message); } }, { once: true });
+  }
+
+  async function importSingleProduct(product) {
+    if (!product.image || product.ownedImage) return;
+    const button = els.imageRows?.querySelector(`[data-image-import="${product.id}"]`);
+    if (button) { button.disabled = true; button.textContent = "Importing…"; }
+    try { const changed = await importDavisProducts([product]); toast(changed ? "Davis image copied into Bevalink library." : "Image was not imported."); } catch (error) { if (button) { button.disabled = false; button.textContent = "Import Davis copy"; } toast(error.message); }
+  }
+
+  async function importAllMissingImages() {
+    const missing = catalog.products.filter((product) => product.image && !product.ownedImage);
+    if (!missing.length) { toast("All product images are already Bevalink-owned."); return; }
+    const button = $("#import-all-images-button"); button.disabled = true; let imported = 0;
+    try { for (let i = 0; i < missing.length; i += 10) { button.textContent = `Importing ${Math.min(i + 10, missing.length)}/${missing.length}…`; imported += await importDavisProducts(missing.slice(i, i + 10)); } toast(`${imported} images copied into Bevalink library. Publish changes to activate them.`); }
+    catch (error) { toast(error.message); }
+    finally { button.disabled = false; button.textContent = "Import all missing"; renderImageLibrary(); }
   }
 
   function renderCategories() {
@@ -320,6 +374,8 @@
     form.price.value = pricing.current;
     form.regularPrice.value = pricing.previous;
     form.image.value = product.image || "";
+    const ownedStatus = $("#product-owned-image-status");
+    if (ownedStatus) ownedStatus.innerHTML = product.ownedImage ? `<span class="image-source-pill owned">Bevalink-owned image active</span> <small>Manage or replace this image from Image Library.</small>` : `<span class="image-source-pill fallback">Davis fallback active</span> <small>Import a permanent copy from Image Library.</small>`;
     form.description.value = product.description || "";
     form.inStock.checked = product.inStock !== false;
     form.onSale.checked = true;
@@ -335,7 +391,7 @@
     const draft = JSON.parse(els.dialog.dataset.draft);
     const minorUnit = Number(draft.minorUnit ?? 2);
     const supplierPrice = Math.max(0, Number(form.supplierPrice.value || 0));
-    const websitePrice = Math.round(supplierPrice * 1.6);
+    const websitePrice = Math.round(supplierPrice * 1.35);
     const previousPrice = Math.round(supplierPrice * 1.8);
     const updated = {
       ...draft,
@@ -454,6 +510,9 @@
     markDirty(); renderEverything();
   });
   els.categoryRows.addEventListener("click", (event) => { const button = event.target.closest("[data-delete-category]"); if (!button) return; const category = catalog.categories.find((item) => String(item.id) === button.dataset.deleteCategory); if (!category || !confirm(`Delete the ${category.name} category? Products will remain in the catalogue.`)) return; catalog.categories = catalog.categories.filter((item) => item !== category); markDirty(); renderEverything(); });
+  if (els.imageRows) els.imageRows.addEventListener("click", async (event) => { const uploadButton = event.target.closest("[data-image-upload]"); if (uploadButton) { const product = catalog.products.find((item) => String(item.id) === String(uploadButton.dataset.imageUpload)); if (product) await uploadOwnedForProduct(product); return; } const importButton = event.target.closest("[data-image-import]"); if (importButton) { const product = catalog.products.find((item) => String(item.id) === String(importButton.dataset.imageImport)); if (product) await importSingleProduct(product); } });
+  $("#import-all-images-button")?.addEventListener("click", importAllMissingImages);
+  els.imageSearch?.addEventListener("input", renderImageLibrary);
   els.save.addEventListener("click", publishChanges);
   $("#export-button").addEventListener("click", exportBackup);
   $("#logout-button").addEventListener("click", async () => { await request("logout").catch(() => {}); location.reload(); });
