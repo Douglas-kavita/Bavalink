@@ -140,6 +140,36 @@ async function uploadImageToGitHub(fileName, mimeType, data, token, repository) 
 }
 
 
+async function importDavisBatchToGitHub(items, token, repository) {
+  if (!Array.isArray(items) || items.length > 10) throw new Error("Import up to 10 images per batch.");
+  const valid = items.filter((item) => item && /^https?:\/\/davismerchants\.co\.ke\//i.test(String(item.url || "")));
+  if (!valid.length) return [];
+  const branch = process.env.GITHUB_BRANCH || "main";
+  const encodedRepo = repository.split("/").map(encodeURIComponent).join("/");
+  const ref = await githubRequest(`/repos/${encodedRepo}/git/ref/heads/${encodeURIComponent(branch)}`, token);
+  const parentSha = ref.object.sha;
+  const parentCommit = await githubRequest(`/repos/${encodedRepo}/git/commits/${parentSha}`, token);
+  const blobs = [];
+  for (const item of valid) {
+    const upstream = await fetch(String(item.url), { headers: { "user-agent": "Bevalink image migration/1.0", accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8" }, signal: AbortSignal.timeout(15000) });
+    if (!upstream.ok) continue;
+    const type = String(upstream.headers.get("content-type") || "").split(";")[0].toLowerCase();
+    if (!IMAGE_TYPES[type]) continue;
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    if (!buffer.length || buffer.length > 2_500_000 || !IMAGE_TYPES[type].signature(buffer)) continue;
+    const cleanName = String(item.name || "product").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48) || "product";
+    const storedName = Date.now() + "-" + crypto.randomBytes(5).toString("hex") + "-" + cleanName + "." + IMAGE_TYPES[type].extension;
+    const filePath = "dist/uploads/products/" + storedName;
+    const blob = await githubRequest(`/repos/${encodedRepo}/git/blobs`, token, { method: "POST", body: JSON.stringify({ content: buffer.toString("base64"), encoding: "base64" }) });
+    blobs.push({ id: item.id, sha: blob.sha, path: filePath });
+  }
+  if (!blobs.length) return [];
+  const tree = await githubRequest(`/repos/${encodedRepo}/git/trees`, token, { method: "POST", body: JSON.stringify({ base_tree: parentCommit.tree.sha, tree: blobs.map((item) => ({ path: item.path, mode: "100644", type: "blob", sha: item.sha })) }) });
+  const commit = await githubRequest(`/repos/${encodedRepo}/git/commits`, token, { method: "POST", body: JSON.stringify({ message: "Import Bevalink product images", tree: tree.sha, parents: [parentSha] }) });
+  await githubRequest(`/repos/${encodedRepo}/git/refs/heads/${encodeURIComponent(branch)}`, token, { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
+  return blobs.map((item) => ({ id: item.id, url: "/" + item.path.replace(/^dist\//, "") }));
+}
+
 async function supabaseRequest(path, baseUrl, anonKey, options = {}) {
   const response = await fetch(String(baseUrl).replace(/\/$/, "") + path, {
     ...options,
@@ -252,6 +282,15 @@ module.exports = async function handler(req, res) {
     return json(res, 200, { authenticated: false });
   }
 
+
+  if (!setupRequired && authenticated(req, sessionSecret) && body.action === "importDavisBatch") {
+    try {
+      const images = await importDavisBatchToGitHub(body.items, githubToken, repository);
+      return json(res, 200, { message: images.length + " images imported.", images });
+    } catch (error) {
+      return json(res, 500, { error: error.message || "The Davis images could not be imported." });
+    }
+  }
 
   if (!setupRequired && authenticated(req, sessionSecret) && body.action === "upload") {
     try {
