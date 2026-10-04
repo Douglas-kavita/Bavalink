@@ -125,6 +125,8 @@
     return `KSh ${new Intl.NumberFormat("en-KE", { maximumFractionDigits: 0 }).format(amount)}`;
   }
 
+  function productImageUrl(product) { return String(product?.ownedImage || product?.image || "").trim(); }
+
   function imageSource(url) {
     const value = String(url || "").trim();
     if (!value) return "";
@@ -154,8 +156,9 @@
   }
 
   function imageMarkup(product, className = "") {
-    if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
-    const originalUrl = String(product.image).trim();
+    const source = productImageUrl(product);
+    if (!source) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
+    const originalUrl = source;
     return `<img class="${className}" src="${escapeHTML(imageSource(originalUrl))}" data-original-url="${escapeHTML(originalUrl)}" alt="${escapeHTML(product.name)}" loading="eager" />`;
   }
   function getFilteredProducts() {
@@ -179,9 +182,9 @@
       const fallbackProduct = products.find((product) =>
         Array.isArray(product.categories) &&
         product.categories.includes(category.name) &&
-        product.image
+        productImageUrl(product)
       );
-      const image = category.image || fallbackProduct?.image || "";
+      const image = category.image || productImageUrl(fallbackProduct) || "";
       return `
         <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
           ${image ? `<img src="${escapeHTML(imageSource(image))}" alt="${escapeHTML(category.name)}" loading="eager" />` : `<div class="placeholder-image">B</div>`}
@@ -203,9 +206,9 @@
         const fallbackProduct = products.find((product) =>
           Array.isArray(product.categories) &&
           product.categories.includes(categoryName) &&
-          product.image
+          productImageUrl(product)
         );
-        img.src = fallbackProduct?.image || (category?.image || "");
+        img.src = productImageUrl(fallbackProduct) || (category?.image || "");
       });
     });;
   }
@@ -359,7 +362,7 @@
     els.checkout.disabled = rows.length === 0;
     els.cartItems.innerHTML = rows.length ? rows.map(({ product, qty }) => `
       <article class="cart-item">
-        ${product.image ? `<img src="${escapeHTML(product.image)}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
+        ${productImageUrl(product) ? `<img src="${escapeHTML(imageSource(productImageUrl(product)))}" alt="" />` : `<div class="cart-thumb-placeholder"></div>`}
         <div><h4>${escapeHTML(product.name)}</h4><p class="cart-item-price">${money(product)}</p><div class="qty-control"><button type="button" data-cart-minus="${product.id}" aria-label="Reduce quantity">−</button><span>${qty}</span><button type="button" data-cart-plus="${product.id}" aria-label="Increase quantity">+</button></div></div>
         <button class="remove-item" type="button" data-cart-remove="${product.id}" aria-label="Remove ${escapeHTML(product.name)}">×</button>
       </article>`).join("") : `<div class="empty-cart"><strong>Your basket is empty</strong><p>Add a product and send the full order to Bevalink on WhatsApp.</p></div>`;
