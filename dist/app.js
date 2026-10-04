@@ -140,6 +140,19 @@
     }
   }
 
+  function productSlug(product) {
+    return String(product?.name || "product")
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-+/g, "-");
+  }
+
+  function productUrl(product) {
+    return "/product/" + productSlug(product);
+  }
+
   function imageMarkup(product, className = "") {
     if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
     const originalUrl = String(product.image).trim();
@@ -198,10 +211,29 @@
   }
 
   function renderFilters() {
-    const priority = ["All", "Drills", "Water Pumps", "Grinders", "Welding Machines", "Weighing Scales", "Electric Saws", "Hand Tools", "Tool Sets", "Solar Systems", "Spray Guns", "Finishing Sanders"];
-    els.filterRow.innerHTML = priority.filter((name) => name === "All" || categories.some((category) => category.name === name)).map((name) => `
+    const priority = ["All", "Drills", "Water Pumps", "Grinders", "Welding Machines", "Weighing Scales", "Electric Saws", "Hand Tools", "Tool Sets", "Solar Systems", "Spray Guns", "Car washer", "Finishing Sanders"];
+    const visible = priority.filter((name) => name === "All" || categories.some((category) => category.name === name));
+    const electricSawChildren = ["Circular Saw", "Jig Saw", "mitre saw", "Power Saw"].filter((name) => categories.some((category) => category.name === name));
+    const remaining = categories.map((category) => category.name).filter((name) => !visible.includes(name)).sort((a,b) => a.localeCompare(b));
+    els.filterRow.innerHTML = visible.map((name) => `
       <button class="filter-chip ${state.category === name ? "active" : ""}" type="button" data-category="${escapeHTML(name)}">${escapeHTML(name)}</button>
-    `).join("");
+    `).join("") +
+    (electricSawChildren.length ? `
+      <label class="category-dropdown">
+        <span>Electric Saws ▾</span>
+        <select data-electric-saw-select aria-label="Electric saw type">
+          <option value="Electric Saws">${state.category === "Electric Saws" ? "All Electric Saws" : "Electric Saws"}</option>
+          ${electricSawChildren.map((name) => `<option value="${escapeHTML(name)}" ${state.category === name ? "selected" : ""}>${escapeHTML(name)}</option>`).join("")}
+        </select>
+      </label>` : "") +
+    (remaining.length ? `
+      <label class="category-dropdown">
+        <span>More Categories ▾</span>
+        <select data-more-category-select aria-label="More product categories">
+          <option value="">More Categories</option>
+          ${remaining.map((name) => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join("")}
+        </select>
+      </label>` : "");
   }
 
   function productCard(product) {
@@ -219,7 +251,7 @@
           <h3 class="product-name" data-view-product="${product.id}">${escapeHTML(product.name)}</h3>
           <div class="product-price"><strong>${money(product)}</strong>${hasDiscount ? `<del>${money(product, product.regularPrice)}</del>` : ""}</div>
           <div class="product-actions">
-            <button class="add-button" type="button" data-whatsapp-product="${product.id}">Ask on WhatsApp</button>
+            <button class="add-button" type="button" data-add-product="${product.id}">Add to Cart</button><button class="whatsapp-button" type="button" data-whatsapp-product="${product.id}">Order via WhatsApp</button>
             <button class="view-button" type="button" data-view-product="${product.id}" aria-label="View product details">↗</button>
           </div>
         </div>
@@ -256,8 +288,9 @@
     document.querySelector("#catalogue").scrollIntoView({ behavior: "smooth" });
   }
 
-  function openProduct(product) {
+  function openProduct(product, updateUrl = true) {
     if (!product) return;
+    if (updateUrl) history.pushState({ productId: String(product.id) }, "", productUrl(product));
     const hasDiscount = product.onSale && product.regularPrice > product.price;
     const description = product.description || product.shortDescription || "Contact the Bevalink team for specifications, stock confirmation and delivery information.";
     const message = encodeURIComponent(`Hello Bevalink, I am interested in ${product.name} (${money(product)}). Is it available?`);
@@ -271,7 +304,7 @@
           <p class="dialog-description">${escapeHTML(description)}</p>
           <div class="dialog-meta"><span>${product.inStock ? "Available to order" : "Confirm stock"}</span>${product.sku ? `<span>SKU: ${escapeHTML(product.sku)}</span>` : ""}<span>Countrywide delivery</span></div>
           <div class="dialog-actions">
-            <button class="dialog-add" type="button" data-whatsapp-product="${product.id}">Ask on WhatsApp</button>
+            <button class="dialog-add" type="button" data-add-product="${product.id}">Add to Cart</button><a class="dialog-whatsapp" href="https://wa.me/${PHONE}?text=${message}" target="_blank" rel="noreferrer">Order via WhatsApp ↗</a>
             <a class="dialog-whatsapp" href="https://wa.me/${PHONE}?text=${message}" target="_blank" rel="noreferrer">Ask on WhatsApp ↗</a>
           </div>
         </div>
@@ -280,8 +313,9 @@
     document.body.classList.add("no-scroll");
   }
 
-  function closeProduct() {
+  function closeProduct(updateUrl = true) {
     els.dialog.close();
+    if (updateUrl && location.pathname.startsWith("/product/")) history.pushState({}, "", "/");
     if (!els.cartDrawer.classList.contains("open")) document.body.classList.remove("no-scroll");
   }
 
@@ -378,12 +412,16 @@
     const plus = event.target.closest("[data-cart-plus]");
     const minus = event.target.closest("[data-cart-minus]");
     const remove = event.target.closest("[data-cart-remove]");
+    const sawSelect = event.target.closest("[data-electric-saw-select]");
+    const moreSelect = event.target.closest("[data-more-category-select]");
     if (view) openProduct(productById.get(view.dataset.viewProduct));
     if (whatsappProduct) askOnWhatsApp(whatsappProduct.dataset.whatsappProduct);
     if (category) selectCategory(category.dataset.category);
     if (plus) updateCart(plus.dataset.cartPlus, 1);
     if (minus) updateCart(minus.dataset.cartMinus, -1);
     if (remove) { delete state.cart[String(remove.dataset.cartRemove)]; saveCart(); }
+    if (sawSelect && sawSelect.value) selectCategory(sawSelect.value);
+    if (moreSelect && moreSelect.value) selectCategory(moreSelect.value);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -407,6 +445,18 @@
   els.mobileNav.addEventListener("click", () => { els.menuButton.setAttribute("aria-expanded", "false"); els.mobileNav.classList.remove("open"); });
   document.querySelectorAll("[data-footer-filter]").forEach((link) => link.addEventListener("click", () => selectCategory(link.dataset.footerFilter)));
   document.querySelector("#year").textContent = new Date().getFullYear();
+  window.addEventListener("popstate", syncProductRoute);
+  function syncProductRoute() {
+    const match = location.pathname.match(/^\/product\/([^/]+)\/?$/i);
+    if (!match) {
+      if (els.dialog.open) closeProduct(false);
+      return;
+    }
+    const slug = match[1].toLowerCase();
+    const product = products.find((item) => productSlug(item) === slug);
+    if (product) openProduct(product, false);
+  }
+
   applySiteConfiguration();
 
   if (!products.length) {
@@ -419,4 +469,5 @@
     renderProducts();
   }
   renderCart();
+  syncProductRoute();
 })();
