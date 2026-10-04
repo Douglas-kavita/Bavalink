@@ -132,7 +132,7 @@
       const parsed = new URL(value, window.location.origin);
       if (parsed.origin === window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return parsed.toString();
       if (["davismerchants.co.ke", "www.davismerchants.co.ke"].includes(parsed.hostname.toLowerCase())) {
-        return "/api/image?url=" + encodeURIComponent(parsed.toString());
+        return parsed.toString();
       }
       return parsed.toString();
     } catch {
