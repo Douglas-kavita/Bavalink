@@ -153,10 +153,13 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .product-price { min-height: 29px; display: flex; align-items: baseline; gap: .55rem; margin-top: .7rem; }
 .product-price strong { font-family: "Barlow Condensed", sans-serif; font-size: 1.3rem; }
 .product-price del { color: #929c99; font-size: .68rem; }
-.product-actions { display: grid; grid-template-columns: 1fr 44px; gap: .55rem; margin-top: .8rem; }
-.add-button, .view-button { min-height: 42px; border: 1px solid var(--ink); border-radius: 8px; cursor: pointer; }
-.add-button { color: white; background: var(--ink); font-size: .7rem; font-weight: 800; }
+.product-actions { display: grid; grid-template-columns: 1fr 1fr 44px; gap: .45rem; margin-top: .8rem; }
+.add-button, .whatsapp-button, .view-button { min-height: 42px; border: 1px solid var(--ink); border-radius: 8px; cursor: pointer; }
+.add-button, .whatsapp-button { font-size: .68rem; font-weight: 800; }
+.add-button { color: white; background: var(--ink); }
 .add-button:hover { color: var(--ink); background: var(--lime); }
+.whatsapp-button { color: var(--ink); background: var(--lime); }
+.whatsapp-button:hover { background: white; }
 .view-button { display: grid; place-items: center; background: white; font-size: 1rem; }
 .view-button:hover { background: var(--paper); }
 .no-results { grid-column: 1 / -1; padding: 5rem 1rem; text-align: center; }
@@ -367,3 +370,14 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .footer-socials a.active:hover{color:var(--ink);background:var(--lime);border-color:var(--lime)}
 .footer-socials svg{width:15px;height:15px}
 @media(max-width:760px){.contact-actions{grid-template-columns:1fr}.contact-line:nth-child(2){border-top:0}.contact-socials{align-items:flex-start;flex-direction:column}}
+
+
+.category-dropdown { display: inline-flex; align-items: center; gap: .4rem; min-height: 40px; padding: 0 .65rem; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--ink); }
+.category-dropdown span { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.category-dropdown select { border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-size: .7rem; font-weight: 700; max-width: 180px; cursor: pointer; }
+@media (max-width: 720px) {
+  .product-actions { grid-template-columns: 1fr 1fr; }
+  .view-button { grid-column: 1 / -1; }
+  .category-dropdown { width: 100%; justify-content: space-between; }
+  .category-dropdown select { max-width: 58%; }
+}
