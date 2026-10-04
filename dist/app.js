@@ -56,7 +56,14 @@
 
     document.querySelectorAll("[data-site-image]").forEach((image) => {
       const value = site[image.dataset.siteImage];
-      if (typeof value === "string" && /^(https?:\/\/|\/)/i.test(value)) image.src = imageSource(value);
+      if (typeof value === "string" && /^(https?:\/\/|\/)/i.test(value)) {
+        image.src = imageSource(value);
+        image.addEventListener("error", () => {
+          if (image.dataset.proxyTried === "1") return;
+          image.dataset.proxyTried = "1";
+          image.src = "/api/image?url=" + encodeURIComponent(value);
+        }, { once: true });
+      }
     });
 
     const brand = site.brandName || "Bevalink";
