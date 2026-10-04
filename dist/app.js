@@ -132,7 +132,7 @@
       const parsed = new URL(value, window.location.origin);
       if (parsed.origin === window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return parsed.toString();
       if (["davismerchants.co.ke", "www.davismerchants.co.ke"].includes(parsed.hostname.toLowerCase())) {
-        return parsed.toString();
+        return "/api/image?url=" + encodeURIComponent(parsed.toString());
       }
       return parsed.toString();
     } catch {
@@ -142,7 +142,7 @@
 
   function imageMarkup(product, className = "") {
     if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
-    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="if(this.dataset.proxyTried!=='1'){this.dataset.proxyTried='1';this.src='/api/image?url='+encodeURIComponent(this.src)}else{this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))}" />`;
+    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="eager" onerror="if(this.dataset.proxyTried!=='1'){this.dataset.proxyTried='1';this.src='/api/image?url='+encodeURIComponent(this.dataset.originalUrl||this.src)}else{this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))}" />`;
   }
 
   function getFilteredProducts() {
@@ -171,7 +171,7 @@
       const image = category.image || fallbackProduct?.image || "";
       return `
         <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
-          ${image ? `<img src="${escapeHTML(imageSource(image))}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
+          ${image ? `<img src="${escapeHTML(imageSource(image))}" alt="${escapeHTML(category.name)}" loading="eager" />` : `<div class="placeholder-image">B</div>`}
           <div><div><h3>${escapeHTML(category.name)}</h3><p>${category.count} products</p></div><b>↘</b></div>
         </article>
       `;
