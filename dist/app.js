@@ -168,11 +168,36 @@
       const image = category.image || fallbackProduct?.image || "";
       return `
         <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
-          ${image ? `<img src="${escapeHTML(imageSource(image))}" alt="${escapeHTML(category.name)}" loading="lazy" onerror="if(this.dataset.proxyTried!=="1"){this.dataset.proxyTried="1";this.src="/api/image?url="+encodeURIComponent(this.src)}else{this.style.display="none";this.parentElement.classList.add("image-failed")}}" />` : `<div class="placeholder-image">B</div>`}
+          ${image ? `<img src="${escapeHTML(imageSource(image))}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
           <div><div><h3>${escapeHTML(category.name)}</h3><p>${category.count} products</p></div><b>↘</b></div>
         </article>
       `;
     }).join("");
+
+    els.categoryShowcase.querySelectorAll("img").forEach((img) => {
+      img.addEventListener("error", () => {
+        if (img.dataset.proxyTried === "1") {
+          img.style.display = "none";
+          img.parentElement.classList.add("image-failed");
+          return;
+        }
+        img.dataset.proxyTried = "1";
+        const original = img.getAttribute("src") || "";
+        if (/^https?:\\/\\//i.test(original)) {
+          img.src = "/api/image?url=" + encodeURIComponent(original);
+          return;
+        }
+        const categoryName = img.alt;
+        const fallbackProduct = products.find((product) =>
+          Array.isArray(product.categories) &&
+          product.categories.includes(categoryName) &&
+          product.image
+        );
+        if (fallbackProduct?.image) {
+          img.src = imageSource(fallbackProduct.image);
+        }
+      });
+    });
   }
 
   function renderFilters() {
