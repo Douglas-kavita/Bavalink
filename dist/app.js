@@ -159,12 +159,20 @@
   function renderCategoryShowcase() {
     const priority = ["Drills", "Water Pumps", "Grinders", "Welding Machines", "Weighing Scales", "Electric Saws", "Tool Sets", "Solar Systems"];
     const selected = priority.map((name) => categories.find((item) => item.name === name)).filter(Boolean);
-    els.categoryShowcase.innerHTML = selected.map((category) => `
-      <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
-        ${category.image ? `<img src="${escapeHTML(imageSource(category.image))}" alt="${escapeHTML(category.name)}" loading="lazy" />` : `<div class="placeholder-image">B</div>`}
-        <div><div><h3>${escapeHTML(category.name)}</h3><p>${category.count} products</p></div><b>↘</b></div>
-      </article>
-    `).join("");
+    els.categoryShowcase.innerHTML = selected.map((category) => {
+      const fallbackProduct = products.find((product) =>
+        Array.isArray(product.categories) &&
+        product.categories.includes(category.name) &&
+        product.image
+      );
+      const image = category.image || fallbackProduct?.image || "";
+      return `
+        <article class="category-card" role="button" tabindex="0" data-category="${escapeHTML(category.name)}" aria-label="Shop ${escapeHTML(category.name)}">
+          ${image ? `<img src="${escapeHTML(imageSource(image))}" alt="${escapeHTML(category.name)}" loading="lazy" onerror="if(this.dataset.proxyTried!=="1"){this.dataset.proxyTried="1";this.src="/api/image?url="+encodeURIComponent(this.src)}else{this.style.display="none";this.parentElement.classList.add("image-failed")}}" />` : `<div class="placeholder-image">B</div>`}
+          <div><div><h3>${escapeHTML(category.name)}</h3><p>${category.count} products</p></div><b>↘</b></div>
+        </article>
+      `;
+    }).join("");
   }
 
   function renderFilters() {
