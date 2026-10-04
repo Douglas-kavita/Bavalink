@@ -65,6 +65,7 @@
           <button class="nav-item active" type="button" data-view="overview"><span>⌂</span>Overview</button>
           <button class="nav-item" type="button" data-view="site"><span>✦</span>Website</button>
           <button class="nav-item" type="button" data-view="products"><span>▦</span>Products</button>
+          <button class="nav-item" type="button" data-view="images"><span>▣</span>Image Library</button>
           <button class="nav-item" type="button" data-view="categories"><span>◇</span>Categories</button>
           <button class="nav-item" type="button" data-view="appearance"><span>◐</span>Appearance</button>
         </nav>
@@ -121,6 +122,14 @@
             <div class="data-table product-table"><div class="table-head"><span>Product</span><span>Category</span><span>Before / profit / after</span><span>Status</span><span></span></div><div id="product-rows"></div></div>
           </section>
 
+          <section class="view" data-view-panel="images">
+            <div class="content-heading product-heading"><div><p class="eyebrow">Bevalink-owned media</p><h2>Image Library</h2><p>Build the permanent Bevalink image folder. Owned images replace the Davis source automatically after publishing.</p></div><button class="save-button" id="import-all-images-button" type="button">Import all missing</button></div>
+            <div class="image-library-summary"><article><strong id="owned-image-count">0</strong><span>Bevalink-owned</span></article><article><strong id="fallback-image-count">0</strong><span>Using Davis fallback</span></article><article><strong id="total-image-count">0</strong><span>Total products</span></article></div>
+            <div class="table-toolbar"><label class="admin-search">⌕<input id="image-library-search" type="search" placeholder="Search products or categories…" /></label></div>
+            <div class="image-library-note"><strong>Safe migration:</strong> the live catalogue keeps its current Davis image until a Bevalink-owned copy is successfully stored and you publish. Nothing is removed during import.</div>
+            <div id="image-library-rows" class="image-library-grid"></div>
+          </section>
+
           <section class="view" data-view-panel="categories">
             <div class="content-heading product-heading"><div><p class="eyebrow">Store navigation</p><h2>Categories</h2><p>Rename departments, change their images or add new ones.</p></div><button class="save-button" id="add-category-button" type="button">+ Add category</button></div>
             <div class="data-table category-table"><div class="table-head"><span>Category</span><span>Products</span><span>Image</span><span></span></div><div id="category-rows"></div></div>
@@ -148,7 +157,7 @@
           <label>Profit added — 60% (KSh)<input name="profitAmount" type="number" readonly /></label>
           <label>Website price — after (KSh)<input name="price" type="number" readonly /></label>
           <label>Old crossed-out price — 80% (KSh)<input name="regularPrice" type="number" readonly /></label>
-          <label class="full">Product image<input name="image" type="url" /></label>
+          <label class="full">Current product image<input name="image" type="url" /></label><div class="full product-owned-image-status" id="product-owned-image-status"></div>
           <label class="full">Description<textarea name="description" rows="6"></textarea></label>
           <label class="check-field"><input name="inStock" type="checkbox" /> In stock</label>
           <label class="check-field"><input name="onSale" type="checkbox" checked disabled /> Show old crossed-out price</label>
