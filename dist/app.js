@@ -123,7 +123,9 @@
     if (!value) return "";
     try {
       const parsed = new URL(value, window.location.origin);
-      if (parsed.origin !== window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return "";
+      if (!["http:", "https:"].includes(parsed.protocol)) return "";
+      const allowedExternalOrigins = new Set(["https://davismerchants.co.ke"]);
+      if (parsed.origin !== window.location.origin && !allowedExternalOrigins.has(parsed.origin)) return "";
       return parsed.toString();
     } catch {
       return "";
