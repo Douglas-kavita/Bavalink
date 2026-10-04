@@ -142,9 +142,9 @@
 
   function imageMarkup(product, className = "") {
     if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
-    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="eager" onerror="if(this.dataset.proxyTried!=='1'){this.dataset.proxyTried='1';this.src='/api/image?url='+encodeURIComponent(this.dataset.originalUrl||this.src)}else{this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))}" />`;
+    const originalUrl = String(product.image).trim();
+    return `<img class="${className}" src="${escapeHTML(imageSource(originalUrl))}" data-original-url="${escapeHTML(originalUrl)}" alt="${escapeHTML(product.name)}" loading="eager" />`;
   }
-
   function getFilteredProducts() {
     const query = state.query.trim().toLowerCase();
     let result = products.filter((product) => {
@@ -245,6 +245,13 @@
     els.grid.innerHTML = visible.length
       ? visible.map(productCard).join("")
       : `<div class="no-results"><strong>No matching tools found</strong><p>Try another product name or clear the filters.</p></div>`;
+    els.grid.querySelectorAll("img[data-original-url]").forEach((img) => {
+      img.addEventListener("error", () => {
+        if (img.dataset.fallbackTried === "1") { img.style.display = "none"; return; }
+        img.dataset.fallbackTried = "1";
+        img.src = img.dataset.originalUrl;
+      }, { once: false });
+    });
   }
 
   function selectCategory(category) {
