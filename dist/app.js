@@ -219,7 +219,7 @@
           <h3 class="product-name" data-view-product="${product.id}">${escapeHTML(product.name)}</h3>
           <div class="product-price"><strong>${money(product)}</strong>${hasDiscount ? `<del>${money(product, product.regularPrice)}</del>` : ""}</div>
           <div class="product-actions">
-            <button class="add-button" type="button" data-add-product="${product.id}">Add to basket</button>
+            <button class="add-button" type="button" data-whatsapp-product="${product.id}">Ask on WhatsApp</button>
             <button class="view-button" type="button" data-view-product="${product.id}" aria-label="View product details">↗</button>
           </div>
         </div>
@@ -271,7 +271,7 @@
           <p class="dialog-description">${escapeHTML(description)}</p>
           <div class="dialog-meta"><span>${product.inStock ? "Available to order" : "Confirm stock"}</span>${product.sku ? `<span>SKU: ${escapeHTML(product.sku)}</span>` : ""}<span>Countrywide delivery</span></div>
           <div class="dialog-actions">
-            <button class="dialog-add" type="button" data-add-product="${product.id}">Add to basket</button>
+            <button class="dialog-add" type="button" data-whatsapp-product="${product.id}">Ask on WhatsApp</button>
             <a class="dialog-whatsapp" href="https://wa.me/${PHONE}?text=${message}" target="_blank" rel="noreferrer">Ask on WhatsApp ↗</a>
           </div>
         </div>
@@ -292,6 +292,13 @@
   function saveCart() {
     localStorage.setItem("bevalink-cart", JSON.stringify(state.cart));
     renderCart();
+  }
+
+  function askOnWhatsApp(id) {
+    const product = productById.get(String(id));
+    if (!product) return;
+    const message = encodeURIComponent(`Hello Bevalink, I am interested in ${product.name} (${money(product)}). Is it available?`);
+    window.open(`https://wa.me/${PHONE}?text=${message}`, "_blank", "noopener,noreferrer");
   }
 
   function addToCart(id) {
@@ -366,13 +373,13 @@
 
   document.addEventListener("click", (event) => {
     const view = event.target.closest("[data-view-product]");
-    const add = event.target.closest("[data-add-product]");
+    const whatsappProduct = event.target.closest("[data-whatsapp-product]");
     const category = event.target.closest("[data-category]");
     const plus = event.target.closest("[data-cart-plus]");
     const minus = event.target.closest("[data-cart-minus]");
     const remove = event.target.closest("[data-cart-remove]");
     if (view) openProduct(productById.get(view.dataset.viewProduct));
-    if (add) addToCart(add.dataset.addProduct);
+    if (whatsappProduct) askOnWhatsApp(whatsappProduct.dataset.whatsappProduct);
     if (category) selectCategory(category.dataset.category);
     if (plus) updateCart(plus.dataset.cartPlus, 1);
     if (minus) updateCart(minus.dataset.cartMinus, -1);
