@@ -124,9 +124,6 @@
     try {
       const parsed = new URL(value, window.location.origin);
       if (parsed.origin === window.location.origin || !["http:", "https:"].includes(parsed.protocol)) return parsed.toString();
-      if (["davismerchants.co.ke", "www.davismerchants.co.ke"].includes(parsed.hostname.toLowerCase())) {
-        return "/api/image?url=" + encodeURIComponent(parsed.toString());
-      }
       return parsed.toString();
     } catch {
       return value;
@@ -135,7 +132,7 @@
 
   function imageMarkup(product, className = "") {
     if (!product.image) return `<div class="placeholder-image ${className}" aria-label="No product image">B</div>`;
-    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))" />`;
+    return `<img class="${className}" src="${escapeHTML(imageSource(product.image))}" alt="${escapeHTML(product.name)}" loading="lazy" onerror="if(this.dataset.proxyTried!=='1'){this.dataset.proxyTried='1';this.src='/api/image?url='+encodeURIComponent(this.src)}else{this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder-image',textContent:'B'}))}" />`;
   }
 
   function getFilteredProducts() {
