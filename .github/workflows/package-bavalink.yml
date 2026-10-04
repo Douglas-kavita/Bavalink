@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - build-bavalink-zip-2026-10-04
+  workflow_dispatch:
 
 jobs:
   package:
